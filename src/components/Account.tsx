@@ -44,7 +44,7 @@ export function Account() {
     if (address && balanceData) {
       cache.writeBalance(address, {
         formatted: Number(
-          formatUnits(balanceData.value, balanceData.decimals)
+          formatUnits(balanceData.value, balanceData.decimals),
         ).toFixed(6),
         symbol: balanceData.symbol ?? null,
         timestamp: Date.now(),
@@ -59,7 +59,7 @@ export function Account() {
     async function fetchPrice() {
       try {
         const res = await fetch(
-          `${coingeckoApiUrl}simple/price?ids=ethereum&vs_currencies=usd`
+          `${coingeckoApiUrl}simple/price?ids=ethereum&vs_currencies=usd`,
         );
         const json = await res.json();
         const price = json?.ethereum?.usd;
@@ -77,6 +77,23 @@ export function Account() {
   // 5. Limited Connectors List (Max 4)
   const limitedConnectors = useMemo(() => connectors.slice(0, 4), [connectors]);
 
+  // Known wallet icons - override icons for injected connectors
+  const walletIcons: Record<string, string> = {
+    MetaMask: "/MetaMask-icon.svg",
+  };
+
+  const getWalletIcon = (connector: any) => {
+    // Prioritize custom icons from walletIcons over connector.icon
+    if (walletIcons[connector.name]) {
+      return walletIcons[connector.name];
+    }
+    // If connector named "Injected" has no icon, use MetaMask icon
+    if (connector.name === "Injected" && !connector.icon) {
+      return "/MetaMask-icon.svg";
+    }
+    return connector.icon;
+  };
+
   if (isConnected) {
     // Priority: Live Data -> Cached Data -> Fallback
     const displayBal = balanceData
@@ -91,7 +108,7 @@ export function Account() {
     const usdValue = (Number(displayBal) * (priceUsd || 0)).toFixed(2);
 
     return (
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-end gap-4">
         <div className="text-right">
           <div className="text-sm font-bold">
             {displayBal} {symbol}
@@ -112,25 +129,27 @@ export function Account() {
   }
 
   return (
-    <div className="flex gap-2">
-      {showConnectors ? (
-        limitedConnectors.map((c) => (
-          <button
-            key={c.uid}
-            onClick={() => connect({ connector: c })}
-            className="px-3 py-2 bg-blue-600 text-white rounded-md text-sm cursor-pointer hover:bg-blue-700 transition"
-          >
-            {c.name}
-          </button>
-        ))
-      ) : (
+    <div className="flex justify-end gap-2">
+      {limitedConnectors.map((c) => (
         <button
-          onClick={() => setShowConnectors(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 transition"
+          key={c.uid}
+          onClick={() => connect({ connector: c })}
+          className="w-12 h-12 bg-white rounded-lg cursor-pointer hover:bg-gray-50 transition flex items-center justify-center border border-gray-200"
+          title={`Connect with ${c.name}`}
         >
-          Connect Wallet
+          {getWalletIcon(c) ? (
+            <img
+              src={getWalletIcon(c)}
+              alt={c.name}
+              className="w-8 h-8 object-contain"
+            />
+          ) : (
+            <span className="text-xs font-medium text-gray-700">
+              {c.name.charAt(0).toUpperCase()}
+            </span>
+          )}
         </button>
-      )}
+      ))}
     </div>
   );
 }

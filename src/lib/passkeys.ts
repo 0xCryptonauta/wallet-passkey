@@ -32,11 +32,11 @@ Versión: 1
 `;
 
 // Configuration
-const APP_VERSION = "your-app-v1";
+const APP_VERSION = "wallet-passkey-app-v1";
 
 // Pre-computed base64url encoded challenge for verification
 const EXPECTED_CHALLENGE_B64URL = base64ToBase64Url(
-  btoa(String.fromCharCode(...new TextEncoder().encode(FIXED_CHALLENGE)))
+  btoa(String.fromCharCode(...new TextEncoder().encode(FIXED_CHALLENGE))),
 );
 
 /**
@@ -63,7 +63,7 @@ function base64ToBase64Url(base64: string): string {
 export async function deriveMasterKey(
   walletSignature: string,
   userAddress: string,
-  chainId: number
+  chainId: number,
 ): Promise<Uint8Array> {
   // Convert signature to bytes (remove 0x prefix if present)
   const cleanSignature = walletSignature.startsWith("0x")
@@ -72,7 +72,7 @@ export async function deriveMasterKey(
 
   // Convert hex signature to Uint8Array
   const signatureBytes = new Uint8Array(
-    cleanSignature.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16))
+    cleanSignature.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)),
   );
 
   // Import signature as key material for HKDF
@@ -80,11 +80,11 @@ export async function deriveMasterKey(
     "raw",
     signatureBytes.buffer.slice(
       signatureBytes.byteOffset,
-      signatureBytes.byteOffset + signatureBytes.byteLength
+      signatureBytes.byteOffset + signatureBytes.byteLength,
     ),
     { name: "HKDF" },
     false,
-    ["deriveBits"]
+    ["deriveBits"],
   );
 
   // Create salt from app version
@@ -102,7 +102,7 @@ export async function deriveMasterKey(
       info: info,
     },
     keyMaterial,
-    256 // 32 bytes
+    256, // 32 bytes
   );
 
   return new Uint8Array(derivedBits);
@@ -114,13 +114,13 @@ export async function deriveMasterKey(
  */
 export async function wrapMasterKey(
   masterKey: Uint8Array,
-  passkeySignature: string
+  passkeySignature: string,
 ): Promise<{ wrappedKey: string; iv: string }> {
   // Convert passkey signature to bytes
   const signatureBytes = new TextEncoder().encode(passkeySignature);
   const signatureBuffer = signatureBytes.buffer.slice(
     signatureBytes.byteOffset,
-    signatureBytes.byteOffset + signatureBytes.byteLength
+    signatureBytes.byteOffset + signatureBytes.byteLength,
   );
 
   // Derive wrapping key from passkey signature using HKDF
@@ -129,7 +129,7 @@ export async function wrapMasterKey(
     signatureBuffer,
     { name: "HKDF" },
     false,
-    ["deriveKey"]
+    ["deriveKey"],
   );
 
   const wrappingKey = await crypto.subtle.deriveKey(
@@ -142,7 +142,7 @@ export async function wrapMasterKey(
     wrappingKeyMaterial,
     { name: "AES-GCM", length: 256 },
     false,
-    ["encrypt"]
+    ["encrypt"],
   );
 
   // Generate cryptographically secure IV
@@ -152,7 +152,7 @@ export async function wrapMasterKey(
   const encrypted = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv },
     wrappingKey,
-    masterKey as any // TypeScript is overly strict about BufferSource types in Web Crypto API
+    masterKey as any, // TypeScript is overly strict about BufferSource types in Web Crypto API
   );
 
   // Return base64 encoded wrapped key and IV
@@ -169,13 +169,13 @@ export async function wrapMasterKey(
 export async function unwrapMasterKey(
   wrappedKey: string,
   iv: string,
-  passkeySignature: string
+  passkeySignature: string,
 ): Promise<Uint8Array> {
   // Convert passkey signature to bytes
   const signatureBytes = new TextEncoder().encode(passkeySignature);
   const signatureBuffer = signatureBytes.buffer.slice(
     signatureBytes.byteOffset,
-    signatureBytes.byteOffset + signatureBytes.byteLength
+    signatureBytes.byteOffset + signatureBytes.byteLength,
   );
 
   // Derive the same wrapping key from passkey signature
@@ -184,7 +184,7 @@ export async function unwrapMasterKey(
     signatureBuffer,
     { name: "HKDF" },
     false,
-    ["deriveKey"]
+    ["deriveKey"],
   );
 
   const wrappingKey = await crypto.subtle.deriveKey(
@@ -197,26 +197,26 @@ export async function unwrapMasterKey(
     wrappingKeyMaterial,
     { name: "AES-GCM", length: 256 },
     false,
-    ["decrypt"]
+    ["decrypt"],
   );
 
   // Decode the wrapped key and IV
   const encryptedData = new Uint8Array(
     atob(wrappedKey)
       .split("")
-      .map((c) => c.charCodeAt(0))
+      .map((c) => c.charCodeAt(0)),
   );
   const ivBytes = new Uint8Array(
     atob(iv)
       .split("")
-      .map((c) => c.charCodeAt(0))
+      .map((c) => c.charCodeAt(0)),
   );
 
   // Decrypt using AES-GCM
   const decrypted = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: ivBytes },
     wrappingKey,
-    encryptedData
+    encryptedData,
   );
 
   return new Uint8Array(decrypted);
@@ -225,6 +225,7 @@ export async function unwrapMasterKey(
 // Types for passkey operations
 export interface PasskeyCredential {
   id: string;
+  walletAddress: string;
   publicKey: string;
   counter: number;
   created: number;
@@ -240,7 +241,8 @@ export interface AuthenticationResult {
  * Register a new passkey for the user
  */
 export async function registerPasskey(
-  walletSignMessage: (message: string) => Promise<string>
+  walletSignMessage: (message: string) => Promise<string>,
+  walletAddress: string,
 ): Promise<AuthenticationResult> {
   try {
     // First, ask user to sign the challenge with their wallet
@@ -270,9 +272,12 @@ export async function registerPasskey(
           id: window.location.hostname,
         },
         user: {
-          id: new TextEncoder().encode("wallet-user"),
-          name: "wallet-user",
-          displayName: "Wallet User",
+          id: new TextEncoder().encode(walletAddress),
+          name: walletAddress,
+          displayName: `Wallet ${walletAddress.slice(
+            0,
+            6,
+          )}...${walletAddress.slice(-4)}`,
         },
         pubKeyCredParams: [
           { alg: -7, type: "public-key" }, // ES256
@@ -299,20 +304,19 @@ export async function registerPasskey(
     const response = credential.response as AuthenticatorAttestationResponse;
     const publicKey = response.getPublicKey();
     const publicKeyString = btoa(
-      String.fromCharCode(...new Uint8Array(publicKey!))
+      String.fromCharCode(...new Uint8Array(publicKey!)),
     );
 
     const passkeyCredential: PasskeyCredential = {
       id: credential.id,
+      walletAddress,
       publicKey: publicKeyString,
       counter: 0, // Initialize counter
       created: Date.now(),
     };
 
-    // Store the credential
-    const storedCredentials = getStoredCredentials();
-    storedCredentials.push(passkeyCredential);
-    localStorage.setItem("wallet-passkeys", JSON.stringify(storedCredentials));
+    // Store the credential for this wallet
+    storeCredential(walletAddress, passkeyCredential);
 
     return { success: true, credential: passkeyCredential };
   } catch (error) {
@@ -328,16 +332,19 @@ export async function registerPasskey(
 }
 
 /**
- * Authenticate using a stored passkey
+ * Authenticate using a stored passkey for a specific wallet
  */
-export async function authenticateWithPasskey(): Promise<AuthenticationResult> {
+export async function authenticateWithPasskey(
+  walletAddress?: string,
+): Promise<AuthenticationResult> {
   try {
-    const storedCredentials = getStoredCredentials();
+    const storedCredentials = getStoredCredentials(walletAddress);
 
     if (storedCredentials.length === 0) {
       return {
         success: false,
-        error: "No passkeys registered. Please register a passkey first.",
+        error:
+          "No passkeys registered for this wallet. Please register a passkey first.",
       };
     }
 
@@ -352,7 +359,7 @@ export async function authenticateWithPasskey(): Promise<AuthenticationResult> {
             id: new Uint8Array(
               atob(base64UrlToBase64(credentialId))
                 .split("")
-                .map((c) => c.charCodeAt(0))
+                .map((c) => c.charCodeAt(0)),
             ),
             type: "public-key",
           },
@@ -371,7 +378,7 @@ export async function authenticateWithPasskey(): Promise<AuthenticationResult> {
 
     // Verify the assertion (in a real implementation, this would be done server-side)
     const clientDataJSON = new TextDecoder().decode(
-      (assertion.response as AuthenticatorAssertionResponse).clientDataJSON
+      (assertion.response as AuthenticatorAssertionResponse).clientDataJSON,
     );
 
     // Parse client data to verify challenge
@@ -398,12 +405,22 @@ export async function authenticateWithPasskey(): Promise<AuthenticationResult> {
 }
 
 /**
- * Get all stored passkey credentials
+ * Get all stored passkey credentials for a specific wallet
  */
-export function getStoredCredentials(): PasskeyCredential[] {
+export function getStoredCredentials(
+  walletAddress?: string,
+): PasskeyCredential[] {
   try {
-    const stored = localStorage.getItem("wallet-passkeys");
-    return stored ? JSON.parse(stored) : [];
+    const allCredentials: Record<string, PasskeyCredential[]> = JSON.parse(
+      localStorage.getItem("wallet-passkeys-v2") || "{}",
+    );
+
+    if (!walletAddress) {
+      // Return all credentials from all wallets (for migration/display purposes)
+      return Object.values(allCredentials).flat();
+    }
+
+    return allCredentials[walletAddress] || [];
   } catch (error) {
     console.error("Failed to get stored credentials:", error);
     return [];
@@ -411,28 +428,130 @@ export function getStoredCredentials(): PasskeyCredential[] {
 }
 
 /**
- * Clear all stored passkeys
+ * Store a passkey credential for a specific wallet
  */
-export function clearStoredCredentials(): void {
-  localStorage.removeItem("wallet-passkeys");
+export function storeCredential(
+  walletAddress: string,
+  credential: PasskeyCredential,
+): void {
+  try {
+    const allCredentials: Record<string, PasskeyCredential[]> = JSON.parse(
+      localStorage.getItem("wallet-passkeys-v2") || "{}",
+    );
+
+    if (!allCredentials[walletAddress]) {
+      allCredentials[walletAddress] = [];
+    }
+
+    // Check if credential already exists (avoid duplicates)
+    const existingIndex = allCredentials[walletAddress].findIndex(
+      (c) => c.id === credential.id,
+    );
+    if (existingIndex >= 0) {
+      allCredentials[walletAddress][existingIndex] = credential;
+    } else {
+      allCredentials[walletAddress].push(credential);
+    }
+
+    localStorage.setItem("wallet-passkeys-v2", JSON.stringify(allCredentials));
+  } catch (error) {
+    console.error("Failed to store credential:", error);
+  }
 }
 
 /**
- * Delete a specific passkey by credential ID
+ * Clear all stored passkeys for a specific wallet
  */
-export function deletePasskey(credentialId: string): boolean {
+export function clearStoredCredentials(walletAddress?: string): void {
+  if (!walletAddress) {
+    // Clear all passkeys from all wallets
+    localStorage.removeItem("wallet-passkeys-v2");
+    // Also clear legacy storage
+    localStorage.removeItem("wallet-passkeys");
+    return;
+  }
+
   try {
-    const storedCredentials = getStoredCredentials();
-    const filteredCredentials = storedCredentials.filter(
-      (cred) => cred.id !== credentialId
+    const allCredentials: Record<string, PasskeyCredential[]> = JSON.parse(
+      localStorage.getItem("wallet-passkeys-v2") || "{}",
     );
 
-    if (filteredCredentials.length < storedCredentials.length) {
+    delete allCredentials[walletAddress];
+
+    if (Object.keys(allCredentials).length === 0) {
+      localStorage.removeItem("wallet-passkeys-v2");
+    } else {
       localStorage.setItem(
-        "wallet-passkeys",
-        JSON.stringify(filteredCredentials)
+        "wallet-passkeys-v2",
+        JSON.stringify(allCredentials),
       );
-      return true;
+    }
+  } catch (error) {
+    console.error("Failed to clear credentials:", error);
+  }
+}
+
+/**
+ * Delete a specific passkey by credential ID and wallet address
+ */
+export function deletePasskey(
+  credentialId: string,
+  walletAddress?: string,
+): boolean {
+  if (!walletAddress) {
+    // For backward compatibility, try to find the credential in any wallet
+    try {
+      const allCredentials: Record<string, PasskeyCredential[]> = JSON.parse(
+        localStorage.getItem("wallet-passkeys-v2") || "{}",
+      );
+
+      for (const [addr, credentials] of Object.entries(allCredentials)) {
+        const filteredCredentials = credentials.filter(
+          (cred) => cred.id !== credentialId,
+        );
+        if (filteredCredentials.length < credentials.length) {
+          if (filteredCredentials.length === 0) {
+            delete allCredentials[addr];
+          } else {
+            allCredentials[addr] = filteredCredentials;
+          }
+          localStorage.setItem(
+            "wallet-passkeys-v2",
+            JSON.stringify(allCredentials),
+          );
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error("Failed to delete passkey:", error);
+      return false;
+    }
+  }
+
+  // Delete from specific wallet
+  try {
+    const allCredentials: Record<string, PasskeyCredential[]> = JSON.parse(
+      localStorage.getItem("wallet-passkeys-v2") || "{}",
+    );
+
+    if (allCredentials[walletAddress]) {
+      const filteredCredentials = allCredentials[walletAddress].filter(
+        (cred) => cred.id !== credentialId,
+      );
+
+      if (filteredCredentials.length < allCredentials[walletAddress].length) {
+        if (filteredCredentials.length === 0) {
+          delete allCredentials[walletAddress];
+        } else {
+          allCredentials[walletAddress] = filteredCredentials;
+        }
+        localStorage.setItem(
+          "wallet-passkeys-v2",
+          JSON.stringify(allCredentials),
+        );
+        return true;
+      }
     }
     return false;
   } catch (error) {
@@ -442,8 +561,8 @@ export function deletePasskey(credentialId: string): boolean {
 }
 
 /**
- * Check if the user has any registered passkeys
+ * Check if the user has any registered passkeys for a specific wallet
  */
-export function hasRegisteredPasskeys(): boolean {
-  return getStoredCredentials().length > 0;
+export function hasRegisteredPasskeys(walletAddress?: string): boolean {
+  return getStoredCredentials(walletAddress).length > 0;
 }

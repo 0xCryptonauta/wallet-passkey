@@ -1,5 +1,4 @@
 // src/components/Navbar.tsx
-import { Account } from "./Account";
 import { useAuth } from "../context/AuthContext";
 
 type TabType = "auth" | "sign" | "verify" | "encrypt";
@@ -9,7 +8,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ onTabClick }: NavbarProps) {
-  const { isAuthenticated, hasPasskeys } = useAuth();
+  const { isAuthenticated, hasPasskeys, currentWalletAddress } = useAuth();
 
   return (
     <nav className="flex items-center justify-between px-8 py-4 border-b border-gray-200 bg-white">
@@ -33,21 +32,6 @@ export function Navbar({ onTabClick }: NavbarProps) {
         <div style={{ marginLeft: "40px" }}>
           <ul className="flex gap-6 text-gray-600 font-medium">
             <li
-              className="hover:text-blue-600 cursor-pointer flex items-center gap-2"
-              onClick={() => onTabClick("auth")}
-            >
-              Auth
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isAuthenticated
-                    ? "bg-green-500"
-                    : hasPasskeys
-                    ? "bg-yellow-500"
-                    : "bg-gray-300"
-                }`}
-              ></span>
-            </li>
-            <li
               className="hover:text-blue-600 cursor-pointer"
               onClick={() => onTabClick("sign")}
             >
@@ -68,7 +52,31 @@ export function Navbar({ onTabClick }: NavbarProps) {
           </ul>
         </div>
 
-        <Account />
+        {/* Show authenticated wallet or Auth tab with status */}
+        <div className="flex items-center gap-2">
+          {isAuthenticated && currentWalletAddress ? (
+            <div
+              className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-lg text-sm font-medium cursor-pointer hover:bg-green-200 transition"
+              onClick={() => onTabClick("auth")}
+            >
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              {currentWalletAddress.slice(0, 6)}...
+              {currentWalletAddress.slice(-4)}
+            </div>
+          ) : (
+            <div
+              className="hover:text-blue-600 cursor-pointer flex items-center gap-2 px-3 py-1 text-gray-600 font-medium"
+              onClick={() => onTabClick("auth")}
+            >
+              Auth
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  hasPasskeys ? "bg-yellow-500" : "bg-gray-300"
+                }`}
+              ></span>
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );

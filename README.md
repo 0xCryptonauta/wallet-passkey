@@ -6,12 +6,32 @@ A revolutionary Web3 wallet application featuring **hardware-backed passkey auth
 
 - 🔐 **Hardware-Backed Security**: WebAuthn passkeys with Touch ID, Face ID, and security keys
 - 🔑 **Wallet Ownership Verification**: Cryptographic proof of wallet control
-- 🛡️ **Enterprise Cryptography**: HKDF key derivation + AES-GCM encryption
+- � **Wallet-Specific Binding**: Passkeys are cryptographically tied to wallet addresses
+- �🛡️ **Enterprise Cryptography**: HKDF key derivation + AES-GCM encryption
 - ⚡ **Zero-Knowledge Architecture**: Sensitive keys never stored in plaintext
 - 🎯 **Biometric UX**: Hardware authentication without passwords
 - 🚀 **Production Ready**: Built with modern Web3 and crypto standards
 
-## 🔐 **How Wallet Signature → Passkey Encryption Works**
+## 🔐 **Authentication Flow & Session Management**
+
+### **Passkey Session Persistence**
+
+The application implements **independent session management** where passkey authentication persists independently of wallet connection status:
+
+- ✅ **Passkey sessions remain active** when wallets are disconnected
+- ✅ **Navbar displays authenticated state** with wallet address from passkey
+- ✅ **Security maintained** with 24-hour automatic expiration
+- ✅ **Wallet switching** properly logs out passkey sessions for different addresses
+- ✅ **Seamless reconnection** maintains authentication for the same wallet
+
+**Example Flow:**
+
+1. Connect wallet → Create/Register passkey → Authenticate
+2. Disconnect wallet → Passkey session stays active ✅
+3. Reconnect same wallet → Authentication maintained ✅
+4. Connect different wallet → Passkey session logs out for security ✅
+
+### **How Wallet Signature → Passkey Encryption Works**
 
 This application implements a **5-phase cryptographic architecture** that combines Web3 wallet ownership with hardware-backed passkey security:
 
@@ -75,6 +95,7 @@ Passkey auth → Unwrap masterKey → Use for operations
 
 - **🔐 End-to-End Encryption**: Master keys encrypted with AES-GCM
 - **🔑 Deterministic Derivation**: Same wallet → same keys (recoverable)
+- **🔗 Wallet Isolation**: Passkeys automatically invalidated when switching wallets
 - **🛡️ Hardware Security**: TPM/TEE-backed key operations
 - **🚫 Anti-Phishing**: Domain verification in challenges
 - **⚡ Zero Trust**: No sensitive data in browser storage
