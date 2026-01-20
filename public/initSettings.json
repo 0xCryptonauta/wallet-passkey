@@ -1,0 +1,4 @@
+{
+  "COINGECKO_URL": "https://api.coingecko.com/api/v3/",
+  "RPC_POOL": ["https://arbitrum.lava.build"]
+}
