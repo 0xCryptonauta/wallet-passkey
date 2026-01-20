@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { hasRegisteredPasskeys } from "../lib/passkeys";
-import type { PasskeyCredential, AuthenticationResult } from "../lib/passkeys";
+import type { AuthenticationResult } from "../lib/passkeys";
 
 interface AuthContextType {
   isAuthenticated: boolean;

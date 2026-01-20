@@ -30,7 +30,7 @@ export function Account() {
 
   // 2. Balance Logic: Only fetch if cache is empty
   const initialBal = cache.readBalance(address);
-  const { data: balanceData, isLoading: isBalanceLoading } = useBalance({
+  const { data: balanceData } = useBalance({
     address: address || undefined,
     query: { enabled: !!address && !initialBal },
   });

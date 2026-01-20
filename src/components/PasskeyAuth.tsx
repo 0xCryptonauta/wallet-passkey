@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { useSignMessage } from "wagmi";
 import {
   registerPasskey,
   getStoredCredentials,
@@ -15,32 +16,32 @@ export function PasskeyAuth() {
     authenticate,
     logout,
   } = useAuth();
+  const { signMessageAsync } = useSignMessage();
   const [isRegistering, setIsRegistering] = useState(false);
-  const [username, setUsername] = useState("");
   const [authMessage, setAuthMessage] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Force re-render when passkeys change
 
   const handleRegister = async () => {
-    if (!username.trim()) {
-      setAuthError("Please enter a username");
-      return;
-    }
-
     setIsRegistering(true);
     setAuthError(null);
-    setAuthMessage("Creating passkey...");
+    setAuthMessage("Signing message with wallet...");
 
     try {
+      // First sign the challenge with the wallet
+      const walletSignMessage = async (message: string): Promise<string> => {
+        return await signMessageAsync({ message });
+      };
+
+      setAuthMessage("Creating passkey...");
       const result: AuthenticationResult = await registerPasskey(
-        username.trim()
+        walletSignMessage
       );
 
       if (result.success) {
         setAuthMessage(
           "Passkey created successfully! You can now authenticate."
         );
-        setUsername("");
       } else {
         setAuthError(result.error || "Registration failed");
       }
@@ -186,23 +187,9 @@ export function PasskeyAuth() {
             </p>
 
             <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter a username for your passkey"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  disabled={isRegistering}
-                />
-              </div>
-
               <button
                 onClick={handleRegister}
-                disabled={isRegistering || !username.trim()}
+                disabled={isRegistering}
                 className="w-full bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isRegistering ? "Creating Passkey..." : "Create Passkey"}
