@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider, type Config } from "wagmi";
 import { createWagmiConfig } from "./wagmi";
 import { SettingsProvider } from "./context/SettingsContext";
+import { AuthProvider } from "./context/AuthContext";
 import "./index.css";
 import App from "./App.tsx";
 
@@ -73,7 +74,9 @@ async function bootstrap() {
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
           <SettingsProvider settings={{ coingeckoApiUrl }}>
-            <App />
+            <AuthProvider>
+              <App />
+            </AuthProvider>
           </SettingsProvider>
         </QueryClientProvider>
       </WagmiProvider>

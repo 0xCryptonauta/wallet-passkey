@@ -1,13 +1,16 @@
 // src/components/Navbar.tsx
 import { Account } from "./Account";
+import { useAuth } from "../context/AuthContext";
 
-type TabType = "sign" | "verify" | "encrypt";
+type TabType = "auth" | "sign" | "verify" | "encrypt";
 
 interface NavbarProps {
   onTabClick: (tab: TabType) => void;
 }
 
 export function Navbar({ onTabClick }: NavbarProps) {
+  const { isAuthenticated, hasPasskeys } = useAuth();
+
   return (
     <nav className="flex items-center justify-between px-8 py-4 border-b border-gray-200 bg-white">
       <div className="flex items-center gap-2 text-xl font-bold tracking-tight">
@@ -29,6 +32,21 @@ export function Navbar({ onTabClick }: NavbarProps) {
       >
         <div style={{ marginLeft: "40px" }}>
           <ul className="flex gap-6 text-gray-600 font-medium">
+            <li
+              className="hover:text-blue-600 cursor-pointer flex items-center gap-2"
+              onClick={() => onTabClick("auth")}
+            >
+              Auth
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isAuthenticated
+                    ? "bg-green-500"
+                    : hasPasskeys
+                    ? "bg-yellow-500"
+                    : "bg-gray-300"
+                }`}
+              ></span>
+            </li>
             <li
               className="hover:text-blue-600 cursor-pointer"
               onClick={() => onTabClick("sign")}

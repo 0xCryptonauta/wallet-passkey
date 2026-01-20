@@ -103,7 +103,7 @@ export function Account() {
         </div>
         <button
           onClick={() => disconnect()}
-          className="text-xs bg-gray-200 p-2 rounded"
+          className="text-xs bg-gray-200 p-2 rounded cursor-pointer hover:bg-gray-300 transition"
         >
           Disconnect
         </button>
@@ -118,7 +118,7 @@ export function Account() {
           <button
             key={c.uid}
             onClick={() => connect({ connector: c })}
-            className="px-3 py-2 bg-blue-600 text-white rounded-md text-sm"
+            className="px-3 py-2 bg-blue-600 text-white rounded-md text-sm cursor-pointer hover:bg-blue-700 transition"
           >
             {c.name}
           </button>
@@ -126,7 +126,7 @@ export function Account() {
       ) : (
         <button
           onClick={() => setShowConnectors(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md"
+          className="px-4 py-2 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 transition"
         >
           Connect Wallet
         </button>
