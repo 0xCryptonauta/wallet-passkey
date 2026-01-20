@@ -8,4 +8,7 @@ export default defineConfig({
     react(),
     tailwindcss(), // Add this line
   ],
+  server: {
+    host: true, // Allows access from network interfaces (WiFi, Ethernet, etc.)
+  },
 });

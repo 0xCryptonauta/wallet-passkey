@@ -17,7 +17,6 @@ export function Account() {
   const { disconnect } = useDisconnect();
   const { coingeckoApiUrl } = useSettings();
 
-  const [showConnectors, setShowConnectors] = useState(false);
   const [priceUsd, setPriceUsd] = useState<number | null>(cache.readPrice());
 
   // 1. ENS Logic: Only fetch if cache is empty

@@ -150,18 +150,81 @@ bun run build
 
 ```typescript
 import { http, createConfig } from "wagmi";
-import { mainnet, sepolia } from "wagmi/chains";
-import { injected } from "wagmi/connectors";
+import { arbitrum, mainnet } from "wagmi/chains";
+import { injected, walletConnect } from "wagmi/connectors";
 
 export const config = createConfig({
-  chains: [mainnet, sepolia],
-  connectors: [injected()],
+  chains: [arbitrum, mainnet],
+  connectors: [
+    injected(), // MetaMask, Rabby, etc.
+    walletConnect({
+      projectId: "2f05a7db73ba2b8b6a26c28c1e1a1b1b", // Test project ID (replace with your own for production)
+      showQrModal: true,
+    }),
+  ],
   transports: {
+    [arbitrum.id]: http(),
     [mainnet.id]: http(),
-    [sepolia.id]: http(),
   },
 });
 ```
+
+### WalletConnect Setup
+
+#### **Environment Variables** 🔧
+
+Create a `.env` file in your project root:
+
+```bash
+# .env
+VITE_WALLETCONNECT_PROJECT_ID=2f05a7db73ba2b8b6a26c28c1e1a1b1b
+```
+
+**Note:** `.env` files are automatically ignored by git for security.
+
+#### **For Development/Testing** 🧪
+
+You can test the WalletConnect UI and functionality with the included test project ID in `.env`:
+
+```typescript
+walletConnect({
+  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "demo-project-id",
+  showQrModal: true,
+}),
+```
+
+**What Works in Test Mode:**
+
+- ✅ WalletConnect button appears in wallet selection
+- ✅ QR modal displays when clicked
+- ✅ UI components render correctly
+- ✅ No build errors or runtime crashes
+
+**What Doesn't Work in Test Mode:**
+
+- ❌ Actual wallet connections (requires valid project ID)
+- ❌ QR code scanning by mobile wallets
+- ❌ Real transaction signing
+
+#### **For Production** 🚀
+
+1. **Create a WalletConnect Project**:
+   - Go to [WalletConnect Cloud](https://cloud.walletconnect.com/)
+   - Sign up/Sign in to your account
+   - Create a new project
+   - Copy your Project ID
+
+2. **Update Configuration**:
+   - Replace the test project ID in `src/wagmi.ts` with your actual Project ID
+   - The QR modal will enable real wallet connections
+
+3. **Supported Wallets**:
+   - MetaMask Mobile
+   - Trust Wallet
+   - Rainbow
+   - Coinbase Wallet
+   - Argent
+   - And 400+ more...
 
 ### Tailwind v4 Setup (`vite.config.ts`)
 
