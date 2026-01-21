@@ -1,6 +1,8 @@
 // src/components/Navbar.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useEnsName } from "wagmi";
+import cache from "../lib/accountCache";
 
 type TabType = "auth" | "sign" | "verify" | "encrypt" | "decrypt";
 
@@ -11,6 +13,30 @@ interface NavbarProps {
 export function Navbar({ onTabClick }: NavbarProps) {
   const { isAuthenticated, hasPasskeys, currentWalletAddress } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // ENS lookup for navbar display
+  const initialEns = currentWalletAddress
+    ? cache.readEns(currentWalletAddress)
+    : null;
+  const { data: ensNameData } = useEnsName({
+    address: currentWalletAddress as `0x${string}` | undefined,
+    chainId: 1,
+    query: { enabled: !!currentWalletAddress && !initialEns },
+  });
+
+  // Cache ENS data
+  useEffect(() => {
+    if (currentWalletAddress && ensNameData) {
+      cache.writeEns(currentWalletAddress, ensNameData);
+    }
+  }, [ensNameData, currentWalletAddress]);
+
+  // Determine display name: ENS if available, otherwise truncated address
+  const displayName = currentWalletAddress
+    ? ensNameData ||
+      initialEns ||
+      `${currentWalletAddress.slice(0, 6)}...${currentWalletAddress.slice(-4)}`
+    : "";
 
   return (
     <div className="relative">
@@ -81,10 +107,7 @@ export function Navbar({ onTabClick }: NavbarProps) {
                 onClick={() => onTabClick("auth")}
               >
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span>
-                  {currentWalletAddress.slice(0, 6)}...
-                  {currentWalletAddress.slice(-4)}
-                </span>
+                <span>{displayName}</span>
               </div>
             ) : (
               <div
