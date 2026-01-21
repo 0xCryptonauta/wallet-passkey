@@ -233,13 +233,14 @@ export function PasskeyAuth() {
                     key={credential.id}
                     className="p-4 border border-gray-200 rounded-lg bg-gray-50"
                   >
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Left Column */}
-                      <div className="space-y-2">
-                        <div className="font-medium text-sm">
+                    {/* Mobile-first stacked layout */}
+                    <div className="block md:grid md:grid-cols-2 md:gap-4">
+                      {/* Left Column - Info */}
+                      <div className="space-y-3 md:space-y-2 mb-4 md:mb-0">
+                        <div className="font-medium text-sm md:text-base">
                           Passkey #{index + 1}
                         </div>
-                        <div className="text-xs text-gray-600">
+                        <div className="text-xs md:text-sm text-gray-600">
                           <span className="font-medium">Wallet:</span>{" "}
                           <code className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs">
                             {credential.walletAddress
@@ -250,36 +251,27 @@ export function PasskeyAuth() {
                               : "Legacy passkey"}
                           </code>
                         </div>
-                        <div className="text-xs text-gray-600">
+                        <div className="text-xs md:text-sm text-gray-600">
                           <span className="font-medium">Credential ID:</span>{" "}
                           <code className="bg-gray-100 px-1 py-0.5 rounded text-xs">
                             {credential.id.substring(0, 20)}...
                           </code>
                         </div>
-                        <div className="mt-1">
-                          <button
-                            onClick={() => handleDeletePasskey(credential.id)}
-                            className="text-xl text-red-500 hover:text-red-700 transition cursor-pointer"
-                            title="Delete this passkey"
-                          >
-                            🗑️
-                          </button>
-                        </div>
                       </div>
 
-                      {/* Right Column */}
-                      <div className="flex flex-col items-end justify-around h-full">
-                        <div className="text-xs text-gray-500 text-right">
+                      {/* Right Column - Date and Actions */}
+                      <div className="flex flex-col md:items-end md:justify-around h-full">
+                        <div className="text-xs md:text-sm text-gray-500 mb-3 md:mb-0 md:text-right">
                           Created:{" "}
                           {new Date(credential.created).toLocaleDateString()}
                         </div>
 
-                        <div className="flex flex-col items-end">
+                        <div className="flex flex-col md:items-end space-y-2 md:space-y-0">
                           {isAuthenticated &&
                           currentWalletAddress === credential.walletAddress ? (
                             <button
                               onClick={handleLogout}
-                              className="text-base bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition font-semibold"
+                              className="text-sm md:text-base bg-red-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-lg hover:bg-red-700 transition font-semibold w-full md:w-auto"
                               title="Log out of this passkey"
                             >
                               Log out PassKey
@@ -292,7 +284,7 @@ export function PasskeyAuth() {
                                 )
                               }
                               disabled={isAuthenticating}
-                              className="text-base bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+                              className="text-sm md:text-base bg-blue-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold w-full md:w-auto"
                               title="Log in with this passkey"
                             >
                               {isAuthenticating
@@ -300,6 +292,17 @@ export function PasskeyAuth() {
                                 : "Log in with PassKey"}
                             </button>
                           )}
+
+                          {/* Delete button - repositioned for mobile */}
+                          <div className="flex justify-center md:justify-end">
+                            <button
+                              onClick={() => handleDeletePasskey(credential.id)}
+                              className="text-lg md:text-xl text-red-500 hover:text-red-700 transition cursor-pointer p-1"
+                              title="Delete this passkey"
+                            >
+                              🗑️
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
