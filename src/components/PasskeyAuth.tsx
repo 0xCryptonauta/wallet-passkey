@@ -31,6 +31,9 @@ export function PasskeyAuth() {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [platformAuthAvailable, setPlatformAuthAvailable] = useState<
+    boolean | null
+  >(null);
 
   // Detect device capabilities and PWA install prompt on mount
   useEffect(() => {
@@ -46,11 +49,13 @@ export function PasskeyAuth() {
           await import("../lib/passkeys");
         capabilities.isPlatformAuthAvailable =
           await isPlatformAuthenticatorAvailable();
+        setPlatformAuthAvailable(capabilities.isPlatformAuthAvailable);
       } catch (error) {
         console.warn(
           "Failed to check platform authenticator availability:",
           error,
         );
+        setPlatformAuthAvailable(false);
       }
     };
 
@@ -383,6 +388,46 @@ export function PasskeyAuth() {
               Create a passkey to secure your wallet operations. This will use
               your device's biometric authentication or a hardware security key.
             </p>
+
+            {/* Passkey Type Information */}
+            {platformAuthAvailable !== null && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-blue-800">
+                    Passkey Type:
+                  </span>
+                  <span
+                    className={`text-sm font-semibold ${
+                      platformAuthAvailable
+                        ? "text-green-700"
+                        : "text-orange-700"
+                    }`}
+                  >
+                    {platformAuthAvailable ? (
+                      <>
+                        <span className="inline-flex items-center gap-1">
+                          🏠 Local Device Passkey
+                        </span>
+                        <span className="text-xs text-green-600 block mt-1">
+                          Stored securely on your PC - works offline, no cloud
+                          required
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="inline-flex items-center gap-1">
+                          ☁️ Cloud Passkey
+                        </span>
+                        <span className="text-xs text-orange-600 block mt-1">
+                          Stored in cloud - may prompt for phone/tablet/security
+                          key
+                        </span>
+                      </>
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-3">
               <button

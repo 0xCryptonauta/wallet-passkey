@@ -249,6 +249,7 @@ export interface AuthenticationResult {
 
 /**
  * Register a new passkey for the user
+ * Prioritizes platform authenticators (local device) over roaming authenticators
  */
 export async function registerPasskey(
   walletSignMessage: (message: string) => Promise<string>,
@@ -283,6 +284,32 @@ export async function registerPasskey(
       };
     }
 
+    // Check if platform authenticators are available
+    const platformAuthAvailable = await isPlatformAuthenticatorAvailable();
+
+    let authenticatorSelection: AuthenticatorSelectionCriteria;
+
+    if (platformAuthAvailable) {
+      // Platform authenticators available - require platform attachment for local-only passkeys
+      console.log(
+        "Platform authenticators available - creating local device passkey",
+      );
+      authenticatorSelection = {
+        authenticatorAttachment: "platform", // Require platform authenticators (local device only)
+        userVerification: "required", // Require user verification
+        residentKey: "required", // Store credential on authenticator
+      };
+    } else {
+      // No platform authenticators - fall back to roaming authenticators
+      console.log(
+        "No platform authenticators - falling back to roaming passkeys (cloud/phone/tablet)",
+      );
+      authenticatorSelection = {
+        userVerification: "required", // Require user verification
+        residentKey: "required", // Store credential on authenticator
+      };
+    }
+
     // Create credential creation options
     const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions =
       {
@@ -303,10 +330,7 @@ export async function registerPasskey(
           { alg: -7, type: "public-key" }, // ES256
           { alg: -257, type: "public-key" }, // RS256
         ],
-        authenticatorSelection: {
-          authenticatorAttachment: "platform", // Prefer platform authenticators (Touch ID, Face ID, etc.)
-          userVerification: "required", // Require user verification
-        },
+        authenticatorSelection,
         timeout: 60000, // 60 seconds
         attestation: "direct",
       };
