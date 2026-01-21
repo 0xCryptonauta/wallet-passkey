@@ -30,10 +30,21 @@ jobs:
       - name: Build
         run: bun run build
 
+      - name: Create CNAME file
+        if: github.ref == 'refs/heads/main'
+        run: echo "wallet.inbytes.xyz" > dist/CNAME
+
+      - name: Setup Pages
+        if: github.ref == 'refs/heads/main'
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
       - name: Deploy to GitHub Pages
         if: github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          cname: wallet.inbytes.xyz
+        id: deployment
+        uses: actions/deploy-pages@v4
