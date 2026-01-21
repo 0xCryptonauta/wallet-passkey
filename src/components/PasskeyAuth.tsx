@@ -52,16 +52,6 @@ export function PasskeyAuth() {
           error,
         );
       }
-
-      console.log("Device capabilities detected:", capabilities);
-      console.log(
-        "Recommended auth method:",
-        capabilities.isWebAuthnSupported &&
-          capabilities.isPlatformAuthAvailable &&
-          !capabilities.isMobile
-          ? "webauthn"
-          : "wallet",
-      );
     };
 
     detectCapabilities();
@@ -81,7 +71,6 @@ export function PasskeyAuth() {
       setShowInstallPrompt(false);
       setIsInstalled(true);
       setDeferredPrompt(null);
-      console.log("PWA was installed");
     };
 
     // Check if already installed
@@ -191,17 +180,13 @@ export function PasskeyAuth() {
     deferredPrompt.prompt();
 
     // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
+    await deferredPrompt.userChoice;
 
     // Reset the deferred prompt
     setDeferredPrompt(null);
     setShowInstallPrompt(false);
 
-    if (outcome === "accepted") {
-      console.log("User accepted the install prompt");
-    } else {
-      console.log("User dismissed the install prompt");
-    }
+    // User responded to install prompt
   };
 
   const dismissInstallPrompt = () => {
@@ -210,9 +195,9 @@ export function PasskeyAuth() {
 
   return (
     <div className="max-w-2xl mx-auto py-6 px-4">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <div className="flex flex-col items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         {/* Wallet Section */}
-        <div className="mb-6">
+        <div className="flex flex-col items-center mb-6">
           <h2 className="text-2xl font-bold mb-6 text-right">Wallet</h2>
           <Account />
         </div>
@@ -285,8 +270,11 @@ export function PasskeyAuth() {
 
         {/* Registered Passkeys Section */}
         {hasPasskeys && (
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-3">Registered Passkeys</h3>
+          <div className="flex flex-col items-center mb-6">
+            <h2 className="text-2xl font-bold inline-flex items-center gap-2">
+              Registered Passkeys
+            </h2>
+            <br />
             <div className="space-y-3">
               {getStoredCredentials(address || undefined).map(
                 (credential, index) => (

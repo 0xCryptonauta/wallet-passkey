@@ -6,8 +6,10 @@ A revolutionary Web3 wallet application featuring **hardware-backed passkey auth
 
 - 🔐 **Hardware-Backed Security**: WebAuthn passkeys with Touch ID, Face ID, and security keys
 - 🔑 **Wallet Ownership Verification**: Cryptographic proof of wallet control
-- � **Wallet-Specific Binding**: Passkeys are cryptographically tied to wallet addresses
-- �🛡️ **Enterprise Cryptography**: HKDF key derivation + AES-GCM encryption
+- 🔒 **End-to-End Encryption**: Deterministic AES-GCM encryption with passkey-derived keys
+- 🔄 **Cross-Device Compatibility**: Same encryption keys work across all devices
+- **Wallet-Specific Binding**: Passkeys are cryptographically tied to wallet addresses
+- 🛡️ **Enterprise Cryptography**: HKDF key derivation + AES-GCM encryption
 - ⚡ **Zero-Knowledge Architecture**: Sensitive keys never stored in plaintext
 - 🎯 **Biometric UX**: Hardware authentication without passwords
 - 🚀 **Production Ready**: Built with modern Web3 and crypto standards
@@ -118,6 +120,49 @@ Passkey auth → Unwrap masterKey → Use for operations
 - Unwraps master key using AES-GCM decryption
 - Zero-knowledge: master key exists only in memory
 - Automatic cleanup after operations complete
+
+## 🔒 **Encryption & Decryption System**
+
+The application provides **end-to-end encryption** capabilities with **deterministic key derivation** for cross-device compatibility:
+
+### **Encrypt Tab** 📝
+
+- **Deterministic Encryption**: Uses passkey-derived master key for AES-GCM encryption
+- **Unique IV Generation**: Each message encrypted with cryptographically secure random IV
+- **Base64 Output**: Encrypted data encoded for easy storage and transmission
+- **Authentication Required**: Only available when user is authenticated with passkey
+
+### **Decrypt Tab** 🔓
+
+- **Seamless Decryption**: Automatically extracts IV and decrypts using stored master key
+- **Cross-Device Compatibility**: Same encrypted messages decrypt correctly on any device
+- **Error Handling**: Clear feedback for invalid messages or authentication issues
+- **Memory-Only Keys**: Master keys exist only in memory during authenticated sessions
+
+### **Cryptographic Flow**
+
+```
+Message → AES-GCM(masterKey, randomIV) → IV + encryptedData → base64
+
+base64 → extract IV + encryptedData → AES-GCM(masterKey, IV) → Message
+```
+
+### **Key Features**
+
+- ✅ **Deterministic Keys**: Same wallet address = same encryption key across devices
+- ✅ **AES-GCM Mode**: Authenticated encryption with integrity verification
+- ✅ **Secure IV**: 12-byte cryptographically secure random initialization vectors
+- ✅ **Base64 Encoding**: Safe for text storage and transmission
+- ✅ **Passkey Protection**: Encryption keys require biometric authentication
+- ✅ **Zero Storage**: Sensitive keys never persisted in browser storage
+
+### **Usage Example**
+
+1. **Connect Wallet** → Authenticate with passkey
+2. **Switch to Encrypt Tab** → Enter message → Click "Encrypt Message"
+3. **Copy Base64 Output** → Can be shared or stored securely
+4. **Switch to Decrypt Tab** → Paste encrypted message → Click "Decrypt Message"
+5. **View Original Message** → Successfully decrypted with same key
 
 ## 🏗️ **Architecture Benefits**
 
@@ -311,6 +356,16 @@ The app includes Progressive Web App (PWA) capabilities:
 - **Installable**: Can be installed as a native app on devices
 - **Auto-Updates**: Service worker automatically updates the app
 - **Fast Loading**: Cached resources load instantly
+
+## 📱 **Application Tabs**
+
+The application provides multiple tabs for different functionalities:
+
+- **🔐 Auth Tab**: Passkey registration and authentication
+- **✍️ Sign Tab**: Message signing with connected wallet
+- **✅ Verify Tab**: Signature verification
+- **🔒 Encrypt Tab**: End-to-end encryption using passkey-derived keys
+- **🔓 Decrypt Tab**: Decryption of encrypted messages
 
 ## 📝 Common Commands
 

@@ -76,14 +76,6 @@ export function Account() {
   // 5. Limited Connectors List (Max 6 for debugging)
   const limitedConnectors = useMemo(() => connectors.slice(0, 6), [connectors]);
 
-  // Debug: Log available connectors
-  useEffect(() => {
-    console.log(
-      "Available connectors:",
-      connectors.map((c) => ({ name: c.name, id: c.id })),
-    );
-  }, [connectors]);
-
   // Known wallet icons - override icons for injected connectors
   const walletIcons: Record<string, string> = {
     MetaMask: "/MetaMask-icon.svg",
@@ -143,9 +135,7 @@ export function Account() {
           key={c.uid}
           onClick={async () => {
             try {
-              console.log(`Connecting to ${c.name}...`);
-              const result = await connect({ connector: c });
-              console.log(`${c.name} connection result:`, result);
+              await connect({ connector: c });
             } catch (error) {
               console.error(`Failed to connect to ${c.name}:`, error);
             }

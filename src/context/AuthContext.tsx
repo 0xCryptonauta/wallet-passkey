@@ -10,6 +10,7 @@ interface AuthContextType {
   hasPasskeys: boolean;
   lastAuthTime: number | null;
   currentWalletAddress: string | null;
+  masterKey: Uint8Array | null;
   authenticate: (walletAddress?: string) => Promise<AuthenticationResult>;
   logout: () => void;
   refreshPasskeys: () => void;
@@ -93,6 +94,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [currentWalletAddress, setCurrentWalletAddress] = useState<
     string | null
   >(persistedState?.walletAddress || null);
+  const [masterKey, setMasterKey] = useState<Uint8Array | null>(null);
 
   // Check for existing passkeys on mount and when storage changes
   useEffect(() => {
@@ -180,7 +182,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { authenticateWithPasskey } = await import("../lib/passkeys");
       const result = await authenticateWithPasskey(authAddress);
 
-      if (result.success) {
+      if (result.success && result.masterKey) {
+        // Use the master key returned from authentication
+        setMasterKey(result.masterKey);
+
         const authTime = Date.now();
         setIsAuthenticated(true);
         setLastAuthTime(authTime);
@@ -204,6 +209,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsAuthenticated(false);
     setLastAuthTime(null);
     setCurrentWalletAddress(null);
+    setMasterKey(null);
     // Clear persisted authentication state
     saveAuthState(false, null, null);
   };
@@ -219,6 +225,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     hasPasskeys,
     lastAuthTime,
     currentWalletAddress,
+    masterKey,
     authenticate,
     logout,
     refreshPasskeys,

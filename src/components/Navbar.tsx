@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
-type TabType = "auth" | "sign" | "verify" | "encrypt";
+type TabType = "auth" | "sign" | "verify" | "encrypt" | "decrypt";
 
 interface NavbarProps {
   onTabClick: (tab: TabType) => void;
@@ -42,6 +42,12 @@ export function Navbar({ onTabClick }: NavbarProps) {
               onClick={() => onTabClick("encrypt")}
             >
               Encrypt
+            </li>
+            <li
+              className="hover:text-blue-600 cursor-pointer transition"
+              onClick={() => onTabClick("decrypt")}
+            >
+              Decrypt
             </li>
           </ul>
 
@@ -126,6 +132,15 @@ export function Navbar({ onTabClick }: NavbarProps) {
                 }}
               >
                 Encrypt
+              </li>
+              <li
+                className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-gray-600 font-medium"
+                onClick={() => {
+                  onTabClick("decrypt");
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Decrypt
               </li>
             </ul>
           </div>

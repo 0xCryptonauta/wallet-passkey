@@ -34,7 +34,6 @@ async function bootstrap() {
 
       if (!isExpired) {
         coingeckoApiUrl = parsed.coingeckoApiUrl;
-        console.log("Using cached initSettings");
       } else {
         localStorage.removeItem(SETTINGS_CACHE_KEY);
       }
@@ -67,8 +66,6 @@ async function bootstrap() {
     }
   }
 
-  console.log("Rendering app with config created at module load");
-
   createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <WagmiProvider config={config}>
@@ -80,7 +77,7 @@ async function bootstrap() {
           </SettingsProvider>
         </QueryClientProvider>
       </WagmiProvider>
-    </React.StrictMode>
+    </React.StrictMode>,
   );
 }
 

@@ -5,8 +5,9 @@ import { Signature } from "./components/Signature";
 import { Verify } from "./components/Verify";
 import { Encrypt } from "./components/Encrypt";
 import { PasskeyAuth } from "./components/PasskeyAuth";
+import { Decrypt } from "./components/Decrypt";
 
-type TabType = "auth" | "sign" | "verify" | "encrypt";
+type TabType = "auth" | "sign" | "verify" | "encrypt" | "decrypt";
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>("sign");
@@ -21,6 +22,8 @@ function App() {
         return <Verify />;
       case "encrypt":
         return <Encrypt />;
+      case "decrypt":
+        return <Decrypt />;
       default:
         return <PasskeyAuth />;
     }

@@ -57,23 +57,29 @@ function base64ToBase64Url(base64: string): string {
 }
 
 /**
- * Phase 2: Derive a root key using HKDF (Web Crypto API)
+ * Derive a master key from a signature using HKDF (Web Crypto API)
  * Exported for future use in full cryptographic implementation
  */
 export async function deriveMasterKey(
-  walletSignature: string,
+  signature: string,
   userAddress: string,
-  chainId: number,
 ): Promise<Uint8Array> {
-  // Convert signature to bytes (remove 0x prefix if present)
-  const cleanSignature = walletSignature.startsWith("0x")
-    ? walletSignature.slice(2)
-    : walletSignature;
-
-  // Convert hex signature to Uint8Array
-  const signatureBytes = new Uint8Array(
-    cleanSignature.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)),
-  );
+  // For wallet signatures (hex), convert to bytes
+  let signatureBytes: Uint8Array;
+  if (signature.startsWith("0x")) {
+    // Wallet signature - hex format
+    const cleanSignature = signature.slice(2);
+    signatureBytes = new Uint8Array(
+      cleanSignature.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)),
+    );
+  } else {
+    // Passkey signature - base64 format
+    signatureBytes = new Uint8Array(
+      atob(signature)
+        .split("")
+        .map((c) => c.charCodeAt(0)),
+    );
+  }
 
   // Import signature as key material for HKDF
   const keyMaterial = await crypto.subtle.importKey(
@@ -81,7 +87,7 @@ export async function deriveMasterKey(
     signatureBytes.buffer.slice(
       signatureBytes.byteOffset,
       signatureBytes.byteOffset + signatureBytes.byteLength,
-    ),
+    ) as ArrayBuffer,
     { name: "HKDF" },
     false,
     ["deriveBits"],
@@ -90,8 +96,8 @@ export async function deriveMasterKey(
   // Create salt from app version
   const salt = new TextEncoder().encode(APP_VERSION);
 
-  // Create info from user address and chain ID
-  const info = new TextEncoder().encode(userAddress + chainId.toString());
+  // Create info from user address
+  const info = new TextEncoder().encode(userAddress);
 
   // Derive master key using HKDF
   const derivedBits = await crypto.subtle.deriveBits(
@@ -229,11 +235,15 @@ export interface PasskeyCredential {
   publicKey: string;
   counter: number;
   created: number;
+  wrappedKey?: string;
+  iv?: string;
 }
 
 export interface AuthenticationResult {
   success: boolean;
   credential?: PasskeyCredential;
+  signature?: string;
+  masterKey?: Uint8Array;
   error?: string;
 }
 
@@ -246,14 +256,24 @@ export async function registerPasskey(
 ): Promise<AuthenticationResult> {
   try {
     // First, ask user to sign the challenge with their wallet
+    let walletSignature: string;
     try {
-      await walletSignMessage(FIXED_CHALLENGE);
+      walletSignature = await walletSignMessage(FIXED_CHALLENGE);
     } catch (error) {
       return {
         success: false,
         error: "Wallet signature required for passkey creation",
       };
     }
+
+    // Derive deterministic master key from wallet signature
+    const masterKey = await deriveMasterKey(walletSignature, walletAddress);
+
+    // Store master key temporarily until first authentication
+    sessionStorage.setItem(
+      `master-key-${walletAddress}`,
+      JSON.stringify(Array.from(masterKey)),
+    );
 
     // Check if WebAuthn is supported
     if (!navigator.credentials || !navigator.credentials.create) {
@@ -391,7 +411,76 @@ export async function authenticateWithPasskey(
       return { success: false, error: "Challenge verification failed" };
     }
 
-    return { success: true, credential: storedCredentials[0] };
+    // Extract the signature for cryptographic operations
+    const signature = btoa(
+      String.fromCharCode(
+        ...new Uint8Array(
+          (assertion.response as AuthenticatorAssertionResponse).signature,
+        ),
+      ),
+    );
+
+    // Handle master key wrapping/unwrapping for deterministic encryption
+    let masterKey: Uint8Array | undefined;
+
+    if (storedCredentials[0].wrappedKey && storedCredentials[0].iv) {
+      // Subsequent authentication: unwrap the stored master key
+      try {
+        masterKey = await unwrapMasterKey(
+          storedCredentials[0].wrappedKey,
+          storedCredentials[0].iv,
+          signature,
+        );
+      } catch (error) {
+        console.error("Failed to unwrap master key:", error);
+        return { success: false, error: "Failed to unwrap encryption key" };
+      }
+    } else {
+      // First authentication: check for temporary master key and wrap it
+      const tempMasterKeyData = sessionStorage.getItem(
+        `master-key-${walletAddress}`,
+      );
+      if (tempMasterKeyData) {
+        try {
+          const tempMasterKey = new Uint8Array(JSON.parse(tempMasterKeyData));
+
+          // Wrap the master key with passkey signature
+          const { wrappedKey, iv } = await wrapMasterKey(
+            tempMasterKey,
+            signature,
+          );
+
+          // Update credential with wrapped key
+          const updatedCredential = {
+            ...storedCredentials[0],
+            wrappedKey,
+            iv,
+          };
+          storeCredential(walletAddress!, updatedCredential);
+
+          // Clean up temporary storage
+          sessionStorage.removeItem(`master-key-${walletAddress}`);
+
+          masterKey = tempMasterKey;
+        } catch (error) {
+          console.error("Failed to wrap master key:", error);
+          return { success: false, error: "Failed to setup encryption key" };
+        }
+      } else {
+        return {
+          success: false,
+          error:
+            "No encryption key available. Please re-register your passkey.",
+        };
+      }
+    }
+
+    return {
+      success: true,
+      credential: storedCredentials[0],
+      signature,
+      masterKey,
+    };
   } catch (error) {
     console.error("Passkey authentication failed:", error);
     return {

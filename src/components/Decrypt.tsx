@@ -1,27 +1,38 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
-export function Encrypt() {
+export function Decrypt() {
   const { isAuthenticated, masterKey } = useAuth();
-  const [message, setMessage] = useState("");
-  const [encryptedMessage, setEncryptedMessage] = useState<string | null>(null);
-  const [isEncrypting, setIsEncrypting] = useState(false);
+  const [encryptedMessage, setEncryptedMessage] = useState("");
+  const [decryptedMessage, setDecryptedMessage] = useState<string | null>(null);
+  const [isDecrypting, setIsDecrypting] = useState(false);
 
-  const handleEncrypt = async () => {
-    if (!message.trim()) {
-      alert("Please enter a message to encrypt");
+  const handleDecrypt = async () => {
+    if (!encryptedMessage.trim()) {
+      alert("Please enter an encrypted message to decrypt");
       return;
     }
 
     if (!masterKey) {
-      alert("No encryption key available. Please authenticate first.");
+      alert("No decryption key available. Please authenticate first.");
       return;
     }
 
-    setIsEncrypting(true);
+    setIsDecrypting(true);
 
     try {
-      // Import crypto functions
+      // Decode the base64 encrypted message
+      const combinedData = new Uint8Array(
+        atob(encryptedMessage)
+          .split("")
+          .map((c) => c.charCodeAt(0)),
+      );
+
+      // Extract IV (first 12 bytes) and encrypted data
+      const iv = combinedData.slice(0, 12);
+      const encryptedData = combinedData.slice(12);
+
+      // Import crypto key
       const cryptoKey = await crypto.subtle.importKey(
         "raw",
         masterKey.buffer.slice(
@@ -30,37 +41,32 @@ export function Encrypt() {
         ) as ArrayBuffer,
         { name: "AES-GCM", length: 256 },
         false,
-        ["encrypt"],
+        ["decrypt"],
       );
 
-      // Generate a random IV for each encryption
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-
-      // Encrypt the message
-      const encodedMessage = new TextEncoder().encode(message);
-      const encrypted = await crypto.subtle.encrypt(
+      // Decrypt the message
+      const decrypted = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv },
         cryptoKey,
-        encodedMessage,
+        encryptedData,
       );
 
-      // Combine IV and encrypted data, base64 encode
-      const combined = new Uint8Array(iv.length + encrypted.byteLength);
-      combined.set(iv);
-      combined.set(new Uint8Array(encrypted), iv.length);
-
-      setEncryptedMessage(btoa(String.fromCharCode(...combined)));
+      // Convert back to text
+      const decryptedText = new TextDecoder().decode(decrypted);
+      setDecryptedMessage(decryptedText);
     } catch (error) {
-      console.error("Encryption failed:", error);
-      alert("Encryption failed. Please try again.");
+      console.error("Decryption failed:", error);
+      alert(
+        "Decryption failed. Please check that the encrypted message is valid and you're using the correct account.",
+      );
     } finally {
-      setIsEncrypting(false);
+      setIsDecrypting(false);
     }
   };
 
   const clearForm = () => {
-    setMessage("");
-    setEncryptedMessage(null);
+    setEncryptedMessage("");
+    setDecryptedMessage(null);
   };
 
   if (!isAuthenticated) {
@@ -86,7 +92,7 @@ export function Encrypt() {
             </div>
             <h2 className="text-2xl font-bold mb-4">Authentication Required</h2>
             <p className="text-gray-600 mb-6">
-              You must authenticate with your passkey to access encryption
+              You must authenticate with your passkey to access decryption
               functionality.
             </p>
             <p className="text-sm text-gray-500">
@@ -102,39 +108,39 @@ export function Encrypt() {
   return (
     <div className="max-w-2xl mx-auto py-12 px-4">
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-        <h2 className="text-2xl font-bold mb-6">Encrypt a Message</h2>
+        <h2 className="text-2xl font-bold mb-6">Decrypt a Message</h2>
 
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Message to Encrypt
+              Encrypted Message
             </label>
             <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Enter the message you want to encrypt..."
-              rows={6}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              value={encryptedMessage}
+              onChange={(e) => setEncryptedMessage(e.target.value)}
+              placeholder="Paste the encrypted message here..."
+              rows={4}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
             />
           </div>
 
           <button
-            onClick={handleEncrypt}
-            disabled={!message.trim() || isEncrypting}
+            onClick={handleDecrypt}
+            disabled={!encryptedMessage.trim() || isDecrypting}
             className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isEncrypting ? "Encrypting..." : "Encrypt Message"}
+            {isDecrypting ? "Decrypting..." : "Decrypt Message"}
           </button>
 
-          {encryptedMessage && (
+          {decryptedMessage && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Encrypted Message
+                Decrypted Message
               </label>
               <textarea
-                value={encryptedMessage}
+                value={decryptedMessage}
                 readOnly
-                rows={4}
+                rows={6}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 font-mono text-sm cursor-not-allowed resize-none"
               />
               <button
