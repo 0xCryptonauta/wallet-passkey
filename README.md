@@ -270,6 +270,48 @@ export default defineConfig({
 });
 ```
 
+## 🚀 Deployment
+
+### GitHub Pages Setup
+
+The application is configured for automatic deployment to GitHub Pages with the subdomain `wallet.inbytes.xyz`.
+
+#### Prerequisites
+
+1. **Enable GitHub Pages** in your repository settings:
+   - Go to Settings → Pages
+   - Set source to "GitHub Actions"
+   - Set custom domain to `wallet.inbytes.xyz`
+
+2. **Configure DNS** for the subdomain:
+   - Add a CNAME record for `wallet.inbytes.xyz` pointing to `0xCryptonauta.github.io`
+   - This enables the custom subdomain deployment
+
+#### Automatic Deployment
+
+- **Trigger**: Pushes to the `main` branch
+- **Build**: Uses Node.js 18 with npm caching
+- **Deploy**: Automatically deploys to GitHub Pages with the CNAME file
+
+#### Manual Build & Preview
+
+```bash
+# Build for production
+npm run build
+
+# Preview production build locally
+npm run preview
+```
+
+### PWA Features
+
+The app includes Progressive Web App (PWA) capabilities:
+
+- **Offline Support**: Static assets cached for offline access
+- **Installable**: Can be installed as a native app on devices
+- **Auto-Updates**: Service worker automatically updates the app
+- **Fast Loading**: Cached resources load instantly
+
 ## 📝 Common Commands
 
 | Command         | Action                                            |
