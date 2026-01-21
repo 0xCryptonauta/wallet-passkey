@@ -116,23 +116,23 @@ export async function deriveMasterKey(
 
 /**
  * Phase 4: Wrap the master key using AES-GCM
+ * Uses credential ID for deterministic wrapping key derivation
  * Exported for future use in full cryptographic implementation
  */
 export async function wrapMasterKey(
   masterKey: Uint8Array,
-  passkeySignature: string,
+  credentialId: string,
 ): Promise<{ wrappedKey: string; iv: string }> {
-  // Convert passkey signature to bytes
-  const signatureBytes = new TextEncoder().encode(passkeySignature);
-  const signatureBuffer = signatureBytes.buffer.slice(
-    signatureBytes.byteOffset,
-    signatureBytes.byteOffset + signatureBytes.byteLength,
-  );
+  // Use credential ID for deterministic key derivation
+  const credentialBytes = new TextEncoder().encode(credentialId);
 
-  // Derive wrapping key from passkey signature using HKDF
+  // Derive wrapping key from credential ID using HKDF
   const wrappingKeyMaterial = await crypto.subtle.importKey(
     "raw",
-    signatureBuffer,
+    credentialBytes.buffer.slice(
+      credentialBytes.byteOffset,
+      credentialBytes.byteOffset + credentialBytes.byteLength,
+    ),
     { name: "HKDF" },
     false,
     ["deriveKey"],
@@ -170,24 +170,24 @@ export async function wrapMasterKey(
 
 /**
  * Unwrap the master key using AES-GCM
+ * Uses credential ID for deterministic wrapping key derivation
  * Exported for future use in full cryptographic implementation
  */
 export async function unwrapMasterKey(
   wrappedKey: string,
   iv: string,
-  passkeySignature: string,
+  credentialId: string,
 ): Promise<Uint8Array> {
-  // Convert passkey signature to bytes
-  const signatureBytes = new TextEncoder().encode(passkeySignature);
-  const signatureBuffer = signatureBytes.buffer.slice(
-    signatureBytes.byteOffset,
-    signatureBytes.byteOffset + signatureBytes.byteLength,
-  );
+  // Use credential ID for deterministic key derivation (same as wrapping)
+  const credentialBytes = new TextEncoder().encode(credentialId);
 
-  // Derive the same wrapping key from passkey signature
+  // Derive the same wrapping key from credential ID
   const wrappingKeyMaterial = await crypto.subtle.importKey(
     "raw",
-    signatureBuffer,
+    credentialBytes.buffer.slice(
+      credentialBytes.byteOffset,
+      credentialBytes.byteOffset + credentialBytes.byteLength,
+    ),
     { name: "HKDF" },
     false,
     ["deriveKey"],
@@ -429,7 +429,7 @@ export async function authenticateWithPasskey(
         masterKey = await unwrapMasterKey(
           storedCredentials[0].wrappedKey,
           storedCredentials[0].iv,
-          signature,
+          credentialId,
         );
       } catch (error) {
         console.error("Failed to unwrap master key:", error);
@@ -444,10 +444,10 @@ export async function authenticateWithPasskey(
         try {
           const tempMasterKey = new Uint8Array(JSON.parse(tempMasterKeyData));
 
-          // Wrap the master key with passkey signature
+          // Wrap the master key with credential ID (deterministic)
           const { wrappedKey, iv } = await wrapMasterKey(
             tempMasterKey,
-            signature,
+            credentialId,
           );
 
           // Update credential with wrapped key
