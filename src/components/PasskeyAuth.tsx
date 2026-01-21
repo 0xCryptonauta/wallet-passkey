@@ -28,8 +28,11 @@ export function PasskeyAuth() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [forceUpdate, setForceUpdate] = useState(0);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
 
-  // Detect device capabilities on mount
+  // Detect device capabilities and PWA install prompt on mount
   useEffect(() => {
     const detectCapabilities = async () => {
       const capabilities = {
@@ -62,7 +65,41 @@ export function PasskeyAuth() {
     };
 
     detectCapabilities();
-  });
+
+    // PWA Install Prompt Logic
+    const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Store the event so it can be triggered later
+      setDeferredPrompt(e as any);
+      // Show the install prompt
+      setShowInstallPrompt(true);
+    };
+
+    const handleAppInstalled = () => {
+      // Hide the install prompt
+      setShowInstallPrompt(false);
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+      console.log("PWA was installed");
+    };
+
+    // Check if already installed
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setIsInstalled(true);
+    }
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    return () => {
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
 
   const handleRegister = async () => {
     if (!address) {
@@ -147,9 +184,33 @@ export function PasskeyAuth() {
     }
   };
 
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) return;
+
+    // Show the install prompt
+    deferredPrompt.prompt();
+
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+
+    // Reset the deferred prompt
+    setDeferredPrompt(null);
+    setShowInstallPrompt(false);
+
+    if (outcome === "accepted") {
+      console.log("User accepted the install prompt");
+    } else {
+      console.log("User dismissed the install prompt");
+    }
+  };
+
+  const dismissInstallPrompt = () => {
+    setShowInstallPrompt(false);
+  };
+
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+    <div className="max-w-2xl mx-auto py-6 px-4">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         {/* Wallet Section */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold mb-6 text-right">Wallet</h2>
@@ -231,30 +292,28 @@ export function PasskeyAuth() {
                 (credential, index) => (
                   <div
                     key={credential.id}
-                    className="p-4 border border-gray-200 rounded-lg bg-gray-50"
+                    className="p-4 border border-gray-200 rounded-lg bg-gray-50 min-w-[300px]"
                   >
-                    {/* Mobile-first stacked layout */}
-                    <div className="block md:grid md:grid-cols-2 md:gap-4">
+                    {/* Two-state layout: stacked on mobile, 2-column on larger screens */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
                       {/* Left Column - Info */}
-                      <div className="space-y-3 md:space-y-2 mb-4 md:mb-0">
-                        <div className="font-medium text-sm md:text-base">
+                      <div className="space-y-3 mb-4 flex flex-col items-center">
+                        <div className="font-medium text-sm">
                           Passkey #{index + 1}
                         </div>
-                        <div className="text-xs md:text-sm text-gray-600">
+                        <div className="flex flex-col items-center text-xs text-gray-600">
                           <span className="font-medium">Wallet:</span>
-                          <br />
                           <code className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs">
                             {credential.walletAddress
                               ? `${credential.walletAddress.slice(
                                   0,
-                                  6,
-                                )}...${credential.walletAddress.slice(-4)}`
+                                  10,
+                                )}...${credential.walletAddress.slice(-6)}`
                               : "Legacy passkey"}
                           </code>
                         </div>
-                        <div className="text-xs md:text-sm text-gray-600">
+                        <div className="flex flex-col items-center text-xs text-gray-600">
                           <span className="font-medium">Credential ID:</span>
-                          <br />
                           <code className="bg-gray-100 px-1 py-0.5 rounded text-xs">
                             {credential.id.substring(0, 20)}...
                           </code>
@@ -262,18 +321,18 @@ export function PasskeyAuth() {
                       </div>
 
                       {/* Right Column - Date and Actions */}
-                      <div className="flex flex-col md:items-end md:justify-around h-full">
-                        <div className="text-xs md:text-sm text-gray-500 mb-3 md:mb-0 md:text-right">
+                      <div className="flex flex-col items-center justify-evenly h-full">
+                        <div className="text-xs text-gray-500 mb-3">
                           Created:{" "}
                           {new Date(credential.created).toLocaleDateString()}
                         </div>
 
-                        <div className="flex flex-col md:items-end space-y-2 md:space-y-0">
+                        <div className="flex flex-col space-y-2">
                           {isAuthenticated &&
                           currentWalletAddress === credential.walletAddress ? (
                             <button
                               onClick={handleLogout}
-                              className="text-sm md:text-base bg-red-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-lg hover:bg-red-700 transition font-semibold w-full md:w-auto"
+                              className="text-sm bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-semibold w-full"
                               title="Log out of this passkey"
                             >
                               Log out PassKey
@@ -286,7 +345,7 @@ export function PasskeyAuth() {
                                 )
                               }
                               disabled={isAuthenticating}
-                              className="text-sm md:text-base bg-blue-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold w-full md:w-auto"
+                              className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold w-full"
                               title="Log in with this passkey"
                             >
                               {isAuthenticating
@@ -296,10 +355,10 @@ export function PasskeyAuth() {
                           )}
 
                           {/* Delete button - repositioned for mobile */}
-                          <div className="flex justify-center md:justify-end">
+                          <div className="flex justify-center">
                             <button
                               onClick={() => handleDeletePasskey(credential.id)}
-                              className="text-lg md:text-xl text-red-500 hover:text-red-700 transition cursor-pointer p-1"
+                              className="text-lg text-red-500 hover:text-red-700 transition cursor-pointer p-1"
                               title="Delete this passkey"
                             >
                               🗑️
@@ -345,6 +404,55 @@ export function PasskeyAuth() {
               >
                 {isRegistering ? "Creating Passkey..." : "Create Passkey"}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* PWA Install Prompt */}
+        {showInstallPrompt && !isInstalled && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
+              <div className="text-center">
+                <div className="mb-4">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg
+                      className="w-8 h-8 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Install Wallet Passkey
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Install our app for a better experience with offline access
+                    and native app features.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={dismissInstallPrompt}
+                    className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition font-medium"
+                  >
+                    Not now
+                  </button>
+                  <button
+                    onClick={handleInstallPWA}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                  >
+                    Install
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

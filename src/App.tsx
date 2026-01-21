@@ -27,9 +27,9 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 min-w-[300px]">
       <Navbar onTabClick={setActiveTab} />
-      {renderComponent()}
+      <div className="flex-1">{renderComponent()}</div>
     </div>
   );
 }
