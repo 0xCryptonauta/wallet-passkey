@@ -110,16 +110,17 @@ masterKey → AES-GCM(passkeySignature) → wrappedKey + IV
 - Generates cryptographically secure 12-byte IV
 - Stores wrapped master key securely
 
-### **Phase 5: Biometric Usage** 🎯
+### **Phase 5: Per-Operation Biometric Verification** 🎯
 
 ```
-Passkey auth → Unwrap masterKey → Use for operations
+Each encrypt/decrypt → WebAuthn assertion → Unwrap masterKey → Use → Discard
 ```
 
-- User authenticates with biometric/passkey
-- Unwraps master key using AES-GCM decryption
-- Zero-knowledge: master key exists only in memory
-- Automatic cleanup after operations complete
+- **Enhanced Security**: Each cryptographic operation requires fresh biometric verification
+- User prompted for fingerprint/face/Touch ID on every encrypt/decrypt
+- Master key temporarily unwrapped only for the specific operation
+- Zero-knowledge: master key never stored in memory between operations
+- Automatic cleanup immediately after each operation completes
 
 ## 🔒 **Encryption & Decryption System**
 
@@ -127,17 +128,19 @@ The application provides **end-to-end encryption** capabilities with **determini
 
 ### **Encrypt Tab** 📝
 
+- **Per-Operation Biometric Verification**: Each encryption requires fresh fingerprint/face/Touch ID
 - **Deterministic Encryption**: Uses passkey-derived master key for AES-GCM encryption
 - **Unique IV Generation**: Each message encrypted with cryptographically secure random IV
 - **Base64 Output**: Encrypted data encoded for easy storage and transmission
-- **Authentication Required**: Only available when user is authenticated with passkey
+- **Authentication Required**: Must be authenticated with passkey to access encryption
 
 ### **Decrypt Tab** 🔓
 
-- **Seamless Decryption**: Automatically extracts IV and decrypts using stored master key
+- **Per-Operation Biometric Verification**: Each decryption requires fresh fingerprint/face/Touch ID
+- **Seamless Decryption**: Automatically extracts IV and decrypts using temporarily unwrapped key
 - **Cross-Device Compatibility**: Same encrypted messages decrypt correctly on any device
 - **Error Handling**: Clear feedback for invalid messages or authentication issues
-- **Memory-Only Keys**: Master keys exist only in memory during authenticated sessions
+- **Zero-Knowledge Keys**: Master keys never stored in memory between operations
 
 ### **Cryptographic Flow**
 
@@ -153,8 +156,8 @@ base64 → extract IV + encryptedData → AES-GCM(masterKey, IV) → Message
 - ✅ **AES-GCM Mode**: Authenticated encryption with integrity verification
 - ✅ **Secure IV**: 12-byte cryptographically secure random initialization vectors
 - ✅ **Base64 Encoding**: Safe for text storage and transmission
-- ✅ **Passkey Protection**: Encryption keys require biometric authentication
-- ✅ **Zero Storage**: Sensitive keys never persisted in browser storage
+- ✅ **Per-Operation Biometric Verification**: Each encrypt/decrypt requires fresh fingerprint/face/Touch ID
+- ✅ **Zero Storage**: Sensitive keys never stored in memory between operations
 
 ### **Usage Example**
 

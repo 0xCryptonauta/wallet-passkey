@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { getMasterKeyForOperation } from "../lib/passkeys";
 
 export function Decrypt() {
-  const { isAuthenticated, masterKey } = useAuth();
+  const { isAuthenticated, currentWalletAddress } = useAuth();
   const [encryptedMessage, setEncryptedMessage] = useState("");
   const [decryptedMessage, setDecryptedMessage] = useState<string | null>(null);
   const [isDecrypting, setIsDecrypting] = useState(false);
@@ -13,14 +14,22 @@ export function Decrypt() {
       return;
     }
 
-    if (!masterKey) {
-      alert("No decryption key available. Please authenticate first.");
+    if (!currentWalletAddress) {
+      alert("No wallet address available. Please authenticate first.");
       return;
     }
 
     setIsDecrypting(true);
 
     try {
+      // Get master key for this operation (requires biometric verification)
+      const keyResult = await getMasterKeyForOperation(currentWalletAddress);
+
+      if (!keyResult.success || !keyResult.masterKey) {
+        alert(keyResult.error || "Failed to get decryption key");
+        return;
+      }
+
       // Decode the base64 encrypted message
       const combinedData = new Uint8Array(
         atob(encryptedMessage)
@@ -35,9 +44,9 @@ export function Decrypt() {
       // Import crypto key
       const cryptoKey = await crypto.subtle.importKey(
         "raw",
-        masterKey.buffer.slice(
-          masterKey.byteOffset,
-          masterKey.byteOffset + masterKey.byteLength,
+        keyResult.masterKey.buffer.slice(
+          keyResult.masterKey.byteOffset,
+          keyResult.masterKey.byteOffset + keyResult.masterKey.byteLength,
         ) as ArrayBuffer,
         { name: "AES-GCM", length: 256 },
         false,

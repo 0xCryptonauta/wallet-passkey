@@ -734,6 +734,92 @@ export async function getRecommendedAuthMethod(): Promise<
 }
 
 /**
+ * Get master key for a cryptographic operation (requires biometric verification)
+ * This performs WebAuthn assertion and temporarily unwraps the master key
+ * without persisting authentication state
+ */
+export async function getMasterKeyForOperation(
+  walletAddress: string,
+): Promise<{ success: boolean; masterKey?: Uint8Array; error?: string }> {
+  try {
+    const storedCredentials = getStoredCredentials(walletAddress);
+
+    if (storedCredentials.length === 0) {
+      return {
+        success: false,
+        error:
+          "No passkeys registered for this wallet. Please register a passkey first.",
+      };
+    }
+
+    // Use the first (most recent) credential
+    const credentialId = storedCredentials[0].id;
+
+    const publicKeyCredentialRequestOptions: PublicKeyCredentialRequestOptions =
+      {
+        challenge: new TextEncoder().encode(FIXED_CHALLENGE),
+        allowCredentials: [
+          {
+            id: new Uint8Array(
+              atob(base64UrlToBase64(credentialId))
+                .split("")
+                .map((c) => c.charCodeAt(0)),
+            ),
+            type: "public-key",
+          },
+        ],
+        userVerification: "required",
+        timeout: 60000,
+      };
+
+    const assertion = (await navigator.credentials.get({
+      publicKey: publicKeyCredentialRequestOptions,
+    })) as PublicKeyCredential;
+
+    if (!assertion) {
+      return { success: false, error: "Authentication failed" };
+    }
+
+    // Verify the assertion (in a real implementation, this would be done server-side)
+    const clientDataJSON = new TextDecoder().decode(
+      (assertion.response as AuthenticatorAssertionResponse).clientDataJSON,
+    );
+
+    // Parse client data to verify challenge
+    const clientData = JSON.parse(clientDataJSON);
+    if (clientData.challenge !== EXPECTED_CHALLENGE_B64URL) {
+      return { success: false, error: "Challenge verification failed" };
+    }
+
+    // Get the wrapped key from stored credentials
+    if (!storedCredentials[0].wrappedKey || !storedCredentials[0].iv) {
+      return {
+        success: false,
+        error: "No encryption key available. Please re-register your passkey.",
+      };
+    }
+
+    // Unwrap the master key for this operation
+    const masterKey = await unwrapMasterKey(
+      storedCredentials[0].wrappedKey,
+      storedCredentials[0].iv,
+      credentialId,
+    );
+
+    return { success: true, masterKey };
+  } catch (error) {
+    console.error("Failed to get master key for operation:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unknown error during key retrieval",
+    };
+  }
+}
+
+/**
  * Authenticate using wallet signature (fallback for WebAuthn)
  */
 export async function authenticateWithWallet(

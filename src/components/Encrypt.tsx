@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { getMasterKeyForOperation } from "../lib/passkeys";
 
 export function Encrypt() {
-  const { isAuthenticated, masterKey } = useAuth();
+  const { isAuthenticated, currentWalletAddress } = useAuth();
   const [message, setMessage] = useState("");
   const [encryptedMessage, setEncryptedMessage] = useState<string | null>(null);
   const [isEncrypting, setIsEncrypting] = useState(false);
@@ -13,20 +14,28 @@ export function Encrypt() {
       return;
     }
 
-    if (!masterKey) {
-      alert("No encryption key available. Please authenticate first.");
+    if (!currentWalletAddress) {
+      alert("No wallet address available. Please authenticate first.");
       return;
     }
 
     setIsEncrypting(true);
 
     try {
+      // Get master key for this operation (requires biometric verification)
+      const keyResult = await getMasterKeyForOperation(currentWalletAddress);
+
+      if (!keyResult.success || !keyResult.masterKey) {
+        alert(keyResult.error || "Failed to get encryption key");
+        return;
+      }
+
       // Import crypto functions
       const cryptoKey = await crypto.subtle.importKey(
         "raw",
-        masterKey.buffer.slice(
-          masterKey.byteOffset,
-          masterKey.byteOffset + masterKey.byteLength,
+        keyResult.masterKey.buffer.slice(
+          keyResult.masterKey.byteOffset,
+          keyResult.masterKey.byteOffset + keyResult.masterKey.byteLength,
         ) as ArrayBuffer,
         { name: "AES-GCM", length: 256 },
         false,
