@@ -73,12 +73,21 @@ export function Account() {
     fetchPrice();
   }, [isConnected, coingeckoApiUrl, priceUsd]);
 
-  // 5. Limited Connectors List (Max 4)
-  const limitedConnectors = useMemo(() => connectors.slice(0, 4), [connectors]);
+  // 5. Limited Connectors List (Max 6 for debugging)
+  const limitedConnectors = useMemo(() => connectors.slice(0, 6), [connectors]);
+
+  // Debug: Log available connectors
+  useEffect(() => {
+    console.log(
+      "Available connectors:",
+      connectors.map((c) => ({ name: c.name, id: c.id })),
+    );
+  }, [connectors]);
 
   // Known wallet icons - override icons for injected connectors
   const walletIcons: Record<string, string> = {
     MetaMask: "/MetaMask-icon.svg",
+    WalletConnect: "/walletConnect_icon.svg",
   };
 
   const getWalletIcon = (connector: any) => {
@@ -132,8 +141,16 @@ export function Account() {
       {limitedConnectors.map((c) => (
         <button
           key={c.uid}
-          onClick={() => connect({ connector: c })}
-          className="w-12 h-12 bg-white rounded-lg cursor-pointer hover:bg-gray-50 transition flex items-center justify-center border border-gray-200"
+          onClick={async () => {
+            try {
+              console.log(`Connecting to ${c.name}...`);
+              const result = await connect({ connector: c });
+              console.log(`${c.name} connection result:`, result);
+            } catch (error) {
+              console.error(`Failed to connect to ${c.name}:`, error);
+            }
+          }}
+          className="w-12 h-12 bg-white rounded-lg cursor-pointer hover:bg-gray-50 transition flex items-center justify-center"
           title={`Connect with ${c.name}`}
         >
           {getWalletIcon(c) ? (

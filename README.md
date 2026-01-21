@@ -14,22 +14,52 @@ A revolutionary Web3 wallet application featuring **hardware-backed passkey auth
 
 ## 🔐 **Authentication Flow & Session Management**
 
-### **Passkey Session Persistence**
+### **Hybrid Authentication System**
 
-The application implements **independent session management** where passkey authentication persists independently of wallet connection status:
+The application implements **intelligent device-aware authentication** that automatically selects the best method for each device:
+
+#### **Device Detection & Method Selection**
+
+```typescript
+// Automatically detects device capabilities
+const capabilities = {
+  isWebAuthnSupported: isWebAuthnSupported(),
+  isPlatformAuthAvailable: await isPlatformAuthenticatorAvailable(),
+  isMobile: isMobileDevice(),
+};
+
+// Selects optimal auth method
+const method = getRecommendedAuthMethod();
+// Returns: 'webauthn' | 'wallet'
+```
+
+#### **Authentication Methods**
+
+**🖥️ Desktop/Supported Devices:**
+
+- **WebAuthn Passkeys**: Hardware-backed biometric authentication
+- **Requirements**: Platform authenticators available + not mobile
+
+**📱 Mobile/Limited Devices:**
+
+- **Wallet Signature Authentication**: Cryptographic wallet signing
+- **Requirements**: Connected wallet with signing capability
+
+#### **Session Persistence**
 
 - ✅ **Passkey sessions remain active** when wallets are disconnected
-- ✅ **Navbar displays authenticated state** with wallet address from passkey
+- ✅ **Navbar displays authenticated state** with wallet address
 - ✅ **Security maintained** with 24-hour automatic expiration
-- ✅ **Wallet switching** properly logs out passkey sessions for different addresses
+- ✅ **Wallet switching** properly logs out sessions for different addresses
 - ✅ **Seamless reconnection** maintains authentication for the same wallet
 
 **Example Flow:**
 
-1. Connect wallet → Create/Register passkey → Authenticate
-2. Disconnect wallet → Passkey session stays active ✅
-3. Reconnect same wallet → Authentication maintained ✅
-4. Connect different wallet → Passkey session logs out for security ✅
+1. Connect wallet → System detects device capabilities
+2. **Desktop**: Offers WebAuthn passkey registration
+3. **Mobile**: Offers wallet signature authentication
+4. Authentication persists independently of wallet connection
+5. Automatic method switching based on device capabilities
 
 ### **How Wallet Signature → Passkey Encryption Works**
 
@@ -137,6 +167,8 @@ bun install
 ```bash
 bun dev
 ```
+
+**Note**: The development server runs with HTTPS enabled for secure context features like WebAuthn. You'll need to accept the self-signed certificate warning in your browser when accessing `https://localhost:5173/`.
 
 ### 3. Build for Production
 

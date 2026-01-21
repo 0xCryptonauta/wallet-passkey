@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSignMessage, useAccount } from "wagmi";
 import {
   registerPasskey,
   getStoredCredentials,
   deletePasskey,
+  isMobileDevice,
+  isWebAuthnSupported,
 } from "../lib/passkeys";
 import type { AuthenticationResult } from "../lib/passkeys";
 import { useAuth } from "../context/AuthContext";
@@ -26,6 +28,41 @@ export function PasskeyAuth() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [forceUpdate, setForceUpdate] = useState(0);
   const [showTooltip, setShowTooltip] = useState(false);
+
+  // Detect device capabilities on mount
+  useEffect(() => {
+    const detectCapabilities = async () => {
+      const capabilities = {
+        isWebAuthnSupported: isWebAuthnSupported(),
+        isPlatformAuthAvailable: false,
+        isMobile: isMobileDevice(),
+      };
+
+      try {
+        const { isPlatformAuthenticatorAvailable } =
+          await import("../lib/passkeys");
+        capabilities.isPlatformAuthAvailable =
+          await isPlatformAuthenticatorAvailable();
+      } catch (error) {
+        console.warn(
+          "Failed to check platform authenticator availability:",
+          error,
+        );
+      }
+
+      console.log("Device capabilities detected:", capabilities);
+      console.log(
+        "Recommended auth method:",
+        capabilities.isWebAuthnSupported &&
+          capabilities.isPlatformAuthAvailable &&
+          !capabilities.isMobile
+          ? "webauthn"
+          : "wallet",
+      );
+    };
+
+    detectCapabilities();
+  });
 
   const handleRegister = async () => {
     if (!address) {
