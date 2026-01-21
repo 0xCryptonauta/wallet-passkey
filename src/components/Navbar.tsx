@@ -75,19 +75,17 @@ export function Navbar({ onTabClick }: NavbarProps) {
                 onClick={() => onTabClick("auth")}
               >
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span className="hidden sm:inline">
+                <span>
                   {currentWalletAddress.slice(0, 6)}...
                   {currentWalletAddress.slice(-4)}
                 </span>
-                <span className="sm:hidden">Wallet</span>
               </div>
             ) : (
               <div
                 className="hover:text-blue-600 cursor-pointer flex items-center gap-2 px-2 sm:px-3 py-1 text-gray-600 font-medium"
                 onClick={() => onTabClick("auth")}
               >
-                <span className="hidden sm:inline">Auth</span>
-                <span className="sm:hidden">🔐</span>
+                <span>Auth</span>
                 <span
                   className={`w-2 h-2 rounded-full ${
                     hasPasskeys ? "bg-yellow-500" : "bg-gray-300"
