@@ -241,7 +241,8 @@ export function PasskeyAuth() {
                           Passkey #{index + 1}
                         </div>
                         <div className="text-xs md:text-sm text-gray-600">
-                          <span className="font-medium">Wallet:</span>{" "}
+                          <span className="font-medium">Wallet:</span>
+                          <br />
                           <code className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs">
                             {credential.walletAddress
                               ? `${credential.walletAddress.slice(
@@ -252,7 +253,8 @@ export function PasskeyAuth() {
                           </code>
                         </div>
                         <div className="text-xs md:text-sm text-gray-600">
-                          <span className="font-medium">Credential ID:</span>{" "}
+                          <span className="font-medium">Credential ID:</span>
+                          <br />
                           <code className="bg-gray-100 px-1 py-0.5 rounded text-xs">
                             {credential.id.substring(0, 20)}...
                           </code>
