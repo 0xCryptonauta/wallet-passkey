@@ -10,7 +10,7 @@ import { Decrypt } from "./components/Decrypt";
 type TabType = "auth" | "sign" | "verify" | "encrypt" | "decrypt";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<TabType>("sign");
+  const [activeTab, setActiveTab] = useState<TabType>("auth");
 
   const renderComponent = () => {
     switch (activeTab) {

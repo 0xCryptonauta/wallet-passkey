@@ -1,11 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSignMessage, useAccount } from "wagmi";
 import {
   registerPasskey,
   getStoredCredentials,
   deletePasskey,
-  isMobileDevice,
-  isWebAuthnSupported,
 } from "../lib/passkeys";
 import type { AuthenticationResult } from "../lib/passkeys";
 import { useAuth } from "../context/AuthContext";
@@ -26,74 +24,6 @@ export function PasskeyAuth() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [authMessage, setAuthMessage] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [forceUpdate, setForceUpdate] = useState(0);
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [platformAuthAvailable, setPlatformAuthAvailable] = useState<
-    boolean | null
-  >(null);
-
-  // Detect device capabilities and PWA install prompt on mount
-  useEffect(() => {
-    const detectCapabilities = async () => {
-      const capabilities = {
-        isWebAuthnSupported: isWebAuthnSupported(),
-        isPlatformAuthAvailable: false,
-        isMobile: isMobileDevice(),
-      };
-
-      try {
-        const { isPlatformAuthenticatorAvailable } =
-          await import("../lib/passkeys");
-        capabilities.isPlatformAuthAvailable =
-          await isPlatformAuthenticatorAvailable();
-        setPlatformAuthAvailable(capabilities.isPlatformAuthAvailable);
-      } catch (error) {
-        console.warn(
-          "Failed to check platform authenticator availability:",
-          error,
-        );
-        setPlatformAuthAvailable(false);
-      }
-    };
-
-    detectCapabilities();
-
-    // PWA Install Prompt Logic
-    const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault();
-      // Store the event so it can be triggered later
-      setDeferredPrompt(e as any);
-      // Show the install prompt
-      setShowInstallPrompt(true);
-    };
-
-    const handleAppInstalled = () => {
-      // Hide the install prompt
-      setShowInstallPrompt(false);
-      setIsInstalled(true);
-      setDeferredPrompt(null);
-    };
-
-    // Check if already installed
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setIsInstalled(true);
-    }
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
-
-    return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handleBeforeInstallPrompt,
-      );
-      window.removeEventListener("appinstalled", handleAppInstalled);
-    };
-  }, []);
 
   const handleRegister = async () => {
     if (!address) {
@@ -146,9 +76,7 @@ export function PasskeyAuth() {
 
     if (result.success) {
       setAuthMessage("Authentication successful!");
-      // Force a re-render by updating local state
       setAuthError(null);
-      setForceUpdate((prev) => prev + 1);
       setTimeout(() => setAuthMessage(null), 2000);
     } else {
       setAuthError(result.error || "Authentication failed");
@@ -176,26 +104,6 @@ export function PasskeyAuth() {
         setAuthError("Failed to delete passkey");
       }
     }
-  };
-
-  const handleInstallPWA = async () => {
-    if (!deferredPrompt) return;
-
-    // Show the install prompt
-    deferredPrompt.prompt();
-
-    // Wait for the user to respond to the prompt
-    await deferredPrompt.userChoice;
-
-    // Reset the deferred prompt
-    setDeferredPrompt(null);
-    setShowInstallPrompt(false);
-
-    // User responded to install prompt
-  };
-
-  const dismissInstallPrompt = () => {
-    setShowInstallPrompt(false);
   };
 
   return (
@@ -280,7 +188,7 @@ export function PasskeyAuth() {
                               )
                             }
                             disabled={isAuthenticating}
-                            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-medium"
+                            className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-medium"
                           >
                             {isAuthenticating ? "Authenticating..." : "Login"}
                           </button>
@@ -294,6 +202,47 @@ export function PasskeyAuth() {
                         </button>
                       </div>
                     </div>
+
+                    {/* X25519 Public Key Display */}
+                    {credential.x25519PublicKey && (
+                      <div className="mt-3 pt-3 border-t border-slate-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="text-xs text-slate-500 mb-1">
+                              X25519 Public Key (for peer messaging)
+                            </div>
+                            <div className="text-xs text-slate-600 font-mono bg-slate-50 p-2 rounded break-all">
+                              {credential.x25519PublicKey}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                credential.x25519PublicKey || "",
+                              );
+                              setAuthMessage("Public key copied to clipboard!");
+                              setTimeout(() => setAuthMessage(null), 2000);
+                            }}
+                            className="ml-3 p-2 text-slate-500 hover:text-slate-700 transition cursor-pointer"
+                            title="Copy public key"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ),
               )}
@@ -337,3 +286,5 @@ export function PasskeyAuth() {
     </div>
   );
 }
+
+export default PasskeyAuth;
