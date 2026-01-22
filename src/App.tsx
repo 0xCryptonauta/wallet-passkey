@@ -30,7 +30,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 min-w-[300px]">
+    <div className="min-h-screen bg-slate-50 min-w-[300px]">
       <Navbar onTabClick={setActiveTab} />
       <div className="flex-1">{renderComponent()}</div>
     </div>

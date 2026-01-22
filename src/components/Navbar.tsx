@@ -50,27 +50,27 @@ export function Navbar({ onTabClick }: NavbarProps) {
         </div>
 
         <div className="flex items-center justify-between flex-1 ml-4 sm:ml-8">
-          <ul className="hidden sm:flex gap-6 text-gray-600 font-medium">
+          <ul className="hidden sm:flex gap-6 text-slate-600 font-medium">
             <li
-              className="hover:text-blue-600 cursor-pointer transition"
+              className="hover:text-slate-900 cursor-pointer transition"
               onClick={() => onTabClick("sign")}
             >
               Sign
             </li>
             <li
-              className="hover:text-blue-600 cursor-pointer transition"
+              className="hover:text-slate-900 cursor-pointer transition"
               onClick={() => onTabClick("verify")}
             >
               Verify
             </li>
             <li
-              className="hover:text-blue-600 cursor-pointer transition"
+              className="hover:text-slate-900 cursor-pointer transition"
               onClick={() => onTabClick("encrypt")}
             >
               Encrypt
             </li>
             <li
-              className="hover:text-blue-600 cursor-pointer transition"
+              className="hover:text-slate-900 cursor-pointer transition"
               onClick={() => onTabClick("decrypt")}
             >
               Decrypt
@@ -80,7 +80,7 @@ export function Navbar({ onTabClick }: NavbarProps) {
           {/* Mobile menu button */}
           <div className="sm:hidden">
             <button
-              className="text-gray-600 hover:text-blue-600 p-2"
+              className="text-slate-600 hover:text-slate-900 p-2"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               <svg
@@ -103,23 +103,19 @@ export function Navbar({ onTabClick }: NavbarProps) {
           <div className="flex items-center gap-2">
             {isAuthenticated && currentWalletAddress ? (
               <div
-                className="flex items-center gap-2 px-2 sm:px-3 py-1 bg-green-100 text-green-800 rounded-lg text-xs sm:text-sm font-medium cursor-pointer hover:bg-green-200 transition"
+                className="flex items-center gap-2 px-2 sm:px-3 py-1 bg-slate-100 text-slate-700 rounded-md text-xs sm:text-sm font-medium cursor-pointer hover:bg-slate-200 transition"
                 onClick={() => onTabClick("auth")}
               >
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span className="w-2 h-2 bg-slate-600 rounded-full"></span>
                 <span>{displayName}</span>
               </div>
             ) : (
               <div
-                className="hover:text-blue-600 cursor-pointer flex items-center gap-2 px-2 sm:px-3 py-1 text-gray-600 font-medium"
+                className="hover:text-slate-900 cursor-pointer flex items-center gap-2 px-2 sm:px-3 py-1 text-slate-600 font-medium"
                 onClick={() => onTabClick("auth")}
               >
                 <span>Auth</span>
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    hasPasskeys ? "bg-yellow-500" : "bg-gray-300"
-                  }`}
-                ></span>
+                <span className="w-2 h-2 rounded-full bg-slate-300"></span>
               </div>
             )}
           </div>
@@ -127,10 +123,10 @@ export function Navbar({ onTabClick }: NavbarProps) {
 
         {/* Mobile menu */}
         {isMobileMenuOpen && (
-          <div className="sm:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-10">
+          <div className="sm:hidden absolute top-full left-0 right-0 bg-white border-b border-slate-200 shadow-sm z-10">
             <ul className="py-2">
               <li
-                className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-gray-600 font-medium"
+                className="px-4 py-3 hover:bg-slate-50 cursor-pointer text-slate-600 font-medium"
                 onClick={() => {
                   onTabClick("sign");
                   setIsMobileMenuOpen(false);
@@ -139,7 +135,7 @@ export function Navbar({ onTabClick }: NavbarProps) {
                 Sign
               </li>
               <li
-                className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-gray-600 font-medium"
+                className="px-4 py-3 hover:bg-slate-50 cursor-pointer text-slate-600 font-medium"
                 onClick={() => {
                   onTabClick("verify");
                   setIsMobileMenuOpen(false);
@@ -148,7 +144,7 @@ export function Navbar({ onTabClick }: NavbarProps) {
                 Verify
               </li>
               <li
-                className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-gray-600 font-medium"
+                className="px-4 py-3 hover:bg-slate-50 cursor-pointer text-slate-600 font-medium"
                 onClick={() => {
                   onTabClick("encrypt");
                   setIsMobileMenuOpen(false);
@@ -157,7 +153,7 @@ export function Navbar({ onTabClick }: NavbarProps) {
                 Encrypt
               </li>
               <li
-                className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-gray-600 font-medium"
+                className="px-4 py-3 hover:bg-slate-50 cursor-pointer text-slate-600 font-medium"
                 onClick={() => {
                   onTabClick("decrypt");
                   setIsMobileMenuOpen(false);

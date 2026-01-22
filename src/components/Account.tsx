@@ -116,7 +116,7 @@ export function Account() {
           {priceUsd && (
             <div className="text-xs text-gray-500">${usdValue} USD</div>
           )}
-          <div className="text-xs font-mono text-blue-500">{displayEns}</div>
+          <div className="text-xs font-mono text-slate-600">{displayEns}</div>
         </div>
         <button
           onClick={() => disconnect()}

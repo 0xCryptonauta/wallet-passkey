@@ -9,7 +9,7 @@ export const ConnectorsList = () => {
         <button
           key={c.uid}
           onClick={() => connect({ connector: c })}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          className="bg-slate-900 text-white px-4 py-2 rounded-md hover:bg-slate-800 transition"
         >
           Connect {c.name}
         </button>
@@ -28,15 +28,15 @@ export const AccountInfo = ({
   const { disconnect } = useDisconnect();
   return (
     <div className="flex items-center gap-4">
-      <span className="text-sm text-gray-600">
+      <span className="text-sm text-slate-600">
         {balance.display} {balance.symbol} {balance.usd && `($${balance.usd})`}
       </span>
-      <span className="text-sm font-mono bg-gray-100 p-2 rounded">
+      <span className="text-sm font-mono bg-slate-100 p-2 rounded">
         {ensName}
       </span>
       <button
         onClick={() => disconnect()}
-        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
+        className="bg-slate-900 text-white px-4 py-2 rounded-md hover:bg-slate-800 transition"
       >
         Disconnect
       </button>

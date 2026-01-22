@@ -199,165 +199,99 @@ export function PasskeyAuth() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-6 px-4">
-      <div className="flex flex-col items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+    <div className="max-w-2xl mx-auto py-12 px-4">
+      <div className="bg-white p-8 rounded-lg border border-slate-200">
         {/* Wallet Section */}
-        <div className="flex flex-col items-center mb-6">
-          <h2 className="text-2xl font-bold mb-6 text-right">Wallet</h2>
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-6 text-slate-900">Wallet</h2>
           <Account />
         </div>
 
-        <div className="relative mb-6">
-          <h2 className="text-2xl font-bold inline-flex items-center gap-2">
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-6 text-slate-900">
             Passkey Authentication
-            <button
-              className="text-gray-400 hover:text-gray-600 transition text-lg"
-              onClick={() => setShowTooltip(!showTooltip)}
-            >
-              ⓘ
-            </button>
           </h2>
-          {showTooltip && (
-            <div className="absolute top-full left-0 mt-2 p-4 bg-gray-900 text-white rounded-lg shadow-lg z-10 max-w-sm">
-              <h4 className="font-semibold mb-2">About Passkeys</h4>
-              <ul className="text-sm space-y-1">
-                <li>
-                  • Passkeys use hardware-backed security for phishing-resistant
-                  authentication
-                </li>
-                <li>
-                  • They work with Touch ID, Face ID, Windows Hello, or hardware
-                  security keys
-                </li>
-                <li>
-                  • No passwords needed - authentication happens directly on
-                  your device
-                </li>
-                <li>
-                  • Credentials are stored securely and cannot be exported
-                </li>
-              </ul>
-              <button
-                className="absolute top-2 right-2 text-gray-400 hover:text-white"
-                onClick={() => setShowTooltip(false)}
-              >
-                ×
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Status Section */}
-        <div
-          key={`status-${forceUpdate}`}
-          className="mb-6 p-4 bg-gray-50 rounded-lg"
-        >
-          <h3 className="font-semibold mb-2">Status</h3>
-          <div className="space-y-1 text-sm">
-            <div className="flex items-center gap-2">
+        <div className="mb-8">
+          <div className="flex items-center gap-6 text-sm text-slate-600">
+            <div className="flex items-center gap-3">
               <span
-                className={`w-2 h-2 rounded-full ${
-                  isAuthenticated ? "bg-green-500" : "bg-gray-300"
+                className={`w-3 h-3 rounded-full ${
+                  isAuthenticated ? "bg-green-500" : "bg-slate-300"
                 }`}
               ></span>
               <span>Authenticated: {isAuthenticated ? "Yes" : "No"}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <span
-                className={`w-2 h-2 rounded-full ${
-                  hasPasskeys ? "bg-green-500" : "bg-gray-300"
+                className={`w-3 h-3 rounded-full ${
+                  hasPasskeys ? "bg-green-500" : "bg-slate-300"
                 }`}
               ></span>
-              <span>Passkeys registered: {hasPasskeys ? "Yes" : "No"}</span>
+              <span>Passkeys: {hasPasskeys ? "Yes" : "No"}</span>
             </div>
           </div>
         </div>
 
         {/* Registered Passkeys Section */}
         {hasPasskeys && (
-          <div className="flex flex-col items-center mb-6">
-            <h2 className="text-2xl font-bold inline-flex items-center gap-2">
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-4 text-slate-900">
               Registered Passkeys
-            </h2>
-            <br />
-            <div className="space-y-3">
+            </h3>
+            <div className="space-y-4">
               {getStoredCredentials(address || undefined).map(
                 (credential, index) => (
                   <div
                     key={credential.id}
-                    className="p-4 border border-gray-200 rounded-lg bg-gray-50 min-w-[300px]"
+                    className="p-4 border border-slate-200 rounded-md"
                   >
-                    {/* Two-state layout: stacked on mobile, 2-column on larger screens */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-                      {/* Left Column - Info */}
-                      <div className="space-y-3 mb-4 flex flex-col items-center">
-                        <div className="font-medium text-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm text-slate-900 mb-1">
                           Passkey #{index + 1}
                         </div>
-                        <div className="flex flex-col items-center text-xs text-gray-600">
-                          <span className="font-medium">Wallet:</span>
-                          <code className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs">
-                            {credential.walletAddress
-                              ? `${credential.walletAddress.slice(
-                                  0,
-                                  10,
-                                )}...${credential.walletAddress.slice(-6)}`
-                              : "Legacy passkey"}
-                          </code>
+                        <div className="text-xs text-slate-600 font-mono">
+                          {credential.walletAddress
+                            ? `${credential.walletAddress.slice(0, 8)}...${credential.walletAddress.slice(-6)}`
+                            : "Legacy passkey"}
                         </div>
-                        <div className="flex flex-col items-center text-xs text-gray-600">
-                          <span className="font-medium">Credential ID:</span>
-                          <code className="bg-gray-100 px-1 py-0.5 rounded text-xs">
-                            {credential.id.substring(0, 20)}...
-                          </code>
+                        <div className="text-xs text-slate-500 mt-1">
+                          {new Date(credential.created).toLocaleDateString()}
                         </div>
                       </div>
 
-                      {/* Right Column - Date and Actions */}
-                      <div className="flex flex-col items-center justify-evenly h-full">
-                        <div className="text-xs text-gray-500 mb-3">
-                          Created:{" "}
-                          {new Date(credential.created).toLocaleDateString()}
-                        </div>
+                      <div className="flex flex-col gap-2 ml-4">
+                        {isAuthenticated &&
+                        currentWalletAddress === credential.walletAddress ? (
+                          <button
+                            onClick={handleLogout}
+                            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition cursor-pointer font-medium"
+                          >
+                            Logout
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              handleAuthenticateWithWallet(
+                                credential.walletAddress,
+                              )
+                            }
+                            disabled={isAuthenticating}
+                            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-medium"
+                          >
+                            {isAuthenticating ? "Authenticating..." : "Login"}
+                          </button>
+                        )}
 
-                        <div className="flex flex-col space-y-2">
-                          {isAuthenticated &&
-                          currentWalletAddress === credential.walletAddress ? (
-                            <button
-                              onClick={handleLogout}
-                              className="text-sm bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition font-semibold w-full"
-                              title="Log out of this passkey"
-                            >
-                              Log out PassKey
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() =>
-                                handleAuthenticateWithWallet(
-                                  credential.walletAddress,
-                                )
-                              }
-                              disabled={isAuthenticating}
-                              className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold w-full"
-                              title="Log in with this passkey"
-                            >
-                              {isAuthenticating
-                                ? "Authenticating..."
-                                : "Log in with PassKey"}
-                            </button>
-                          )}
-
-                          {/* Delete button - repositioned for mobile */}
-                          <div className="flex justify-center">
-                            <button
-                              onClick={() => handleDeletePasskey(credential.id)}
-                              className="text-lg text-red-500 hover:text-red-700 transition cursor-pointer p-1"
-                              title="Delete this passkey"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </div>
+                        <button
+                          onClick={() => handleDeletePasskey(credential.id)}
+                          className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition cursor-pointer"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -369,124 +303,34 @@ export function PasskeyAuth() {
 
         {/* Messages */}
         {authMessage && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-blue-800 text-sm">{authMessage}</p>
+          <div className="mb-6 p-3 bg-slate-50 border border-slate-200 rounded-md">
+            <p className="text-slate-700 text-sm">{authMessage}</p>
           </div>
         )}
 
         {authError && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 text-sm">{authError}</p>
+          <div className="mb-6 p-3 bg-slate-50 border border-slate-200 rounded-md">
+            <p className="text-slate-700 text-sm">{authError}</p>
           </div>
         )}
 
         {/* Registration Section */}
         {isConnected && !hasPasskeys && (
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-3">Register Passkey</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Create a passkey to secure your wallet operations. This will use
-              your device's biometric authentication or a hardware security key.
+          <div>
+            <h3 className="text-lg font-medium mb-3 text-slate-900">
+              Create Passkey
+            </h3>
+            <p className="text-sm text-slate-600 mb-6">
+              Create a passkey to secure your wallet operations using your
+              device's biometric authentication.
             </p>
-
-            {/* Passkey Type Information */}
-            {platformAuthAvailable !== null && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-blue-800">
-                    Passkey Type:
-                  </span>
-                  <span
-                    className={`text-sm font-semibold ${
-                      platformAuthAvailable
-                        ? "text-green-700"
-                        : "text-orange-700"
-                    }`}
-                  >
-                    {platformAuthAvailable ? (
-                      <>
-                        <span className="inline-flex items-center gap-1">
-                          🏠 Local Device Passkey
-                        </span>
-                        <span className="text-xs text-green-600 block mt-1">
-                          Stored securely on your PC - works offline, no cloud
-                          required
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="inline-flex items-center gap-1">
-                          ☁️ Cloud Passkey
-                        </span>
-                        <span className="text-xs text-orange-600 block mt-1">
-                          Stored in cloud - may prompt for phone/tablet/security
-                          key
-                        </span>
-                      </>
-                    )}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <button
-                onClick={handleRegister}
-                disabled={isRegistering}
-                className="w-full bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isRegistering ? "Creating Passkey..." : "Create Passkey"}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* PWA Install Prompt */}
-        {showInstallPrompt && !isInstalled && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
-              <div className="text-center">
-                <div className="mb-4">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg
-                      className="w-8 h-8 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Install Wallet Passkey
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Install our app for a better experience with offline access
-                    and native app features.
-                  </p>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={dismissInstallPrompt}
-                    className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition font-medium"
-                  >
-                    Not now
-                  </button>
-                  <button
-                    onClick={handleInstallPWA}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-                  >
-                    Install
-                  </button>
-                </div>
-              </div>
-            </div>
+            <button
+              onClick={handleRegister}
+              disabled={isRegistering}
+              className="w-full bg-slate-900 text-white px-6 py-3 rounded-md font-medium hover:bg-slate-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isRegistering ? "Creating Passkey..." : "Create Passkey"}
+            </button>
           </div>
         )}
       </div>

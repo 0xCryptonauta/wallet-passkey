@@ -6,7 +6,7 @@ export function Verify() {
   const [message, setMessage] = useState("");
   const [signature, setSignature] = useState("");
   const [verificationResult, setVerificationResult] = useState<string | null>(
-    null
+    null,
   );
 
   const handleVerify = () => {
@@ -19,7 +19,7 @@ export function Verify() {
     // For now, just show a placeholder
     const isValid = Math.random() > 0.5; // Random result for demo
     setVerificationResult(
-      isValid ? "Signature is valid" : "Signature is invalid"
+      isValid ? "Signature is valid" : "Signature is invalid",
     );
   };
 
@@ -32,11 +32,11 @@ export function Verify() {
   if (!isAuthenticated) {
     return (
       <div className="max-w-2xl mx-auto py-12 px-4">
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-white p-8 rounded-lg border border-slate-200">
           <div className="text-center">
             <div className="mb-4">
               <svg
-                className="mx-auto h-12 w-12 text-gray-400"
+                className="mx-auto h-12 w-12 text-slate-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -50,12 +50,14 @@ export function Verify() {
                 />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold mb-4">Authentication Required</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-xl font-semibold mb-4 text-slate-900">
+              Authentication Required
+            </h2>
+            <p className="text-slate-600 mb-6">
               You must authenticate with your passkey to access signature
               verification functionality.
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-500">
               Go to the <strong>Auth</strong> tab to register or authenticate
               with your passkey.
             </p>
@@ -67,12 +69,14 @@ export function Verify() {
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-        <h2 className="text-2xl font-bold mb-6">Verify a Signature</h2>
+      <div className="bg-white p-8 rounded-lg border border-slate-200">
+        <h2 className="text-xl font-semibold mb-6 text-slate-900">
+          Verify a Signature
+        </h2>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-3">
               Message
             </label>
             <textarea
@@ -80,12 +84,12 @@ export function Verify() {
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Enter the original message..."
               rows={6}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-3 border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-3">
               Signature
             </label>
             <input
@@ -93,35 +97,35 @@ export function Verify() {
               value={signature}
               onChange={(e) => setSignature(e.target.value)}
               placeholder="Enter the signature to verify..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900"
             />
           </div>
 
           <button
             onClick={handleVerify}
             disabled={!message.trim() || !signature.trim()}
-            className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-slate-900 text-white px-6 py-3 rounded-md font-medium hover:bg-slate-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Verify Signature
           </button>
 
           {verificationResult && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-3">
                 Verification Result
               </label>
               <div
-                className={`w-full px-4 py-3 border rounded-lg font-medium text-sm ${
+                className={`w-full px-4 py-3 border rounded-md font-medium text-sm ${
                   verificationResult.includes("valid")
-                    ? "bg-green-50 border-green-200 text-green-800"
-                    : "bg-red-50 border-red-200 text-red-800"
+                    ? "bg-slate-50 border-slate-200 text-slate-700"
+                    : "bg-slate-50 border-slate-200 text-slate-700"
                 }`}
               >
                 {verificationResult}
               </div>
               <button
                 onClick={clearForm}
-                className="mt-3 w-full bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-semibold hover:bg-gray-400 transition"
+                className="mt-4 w-full bg-slate-100 text-slate-700 px-6 py-2 rounded-md font-medium hover:bg-slate-200 transition"
               >
                 Clear
               </button>
