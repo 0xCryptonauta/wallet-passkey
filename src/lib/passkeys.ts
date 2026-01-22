@@ -1,14 +1,11 @@
 // Fixed challenge for development - in production, this should be generated server-side
-const domain = "inBytes.xyz";
 const uri = "https://wallet.inbytes.xyz";
+
+import { x25519 } from "@noble/curves/ed25519.js";
 
 const FIXED_CHALLENGE = `
 
 ⚠️ Only sign this message on ${uri}
-
-${domain}
-
-Wants you to sign this with your prefered wallet.
 
 This signature proves you own this wallet.
 It will generate a key to encrypt and decrypt your data.
@@ -16,15 +13,11 @@ It will generate a key to encrypt and decrypt your data.
 URI: ${uri}
 Version: 1
 
--------------------------------------------------------------------
+-----------------------------------------
 
 ⚠️ Firma este mensaje únicamente en ${uri}
 
-${domain} 
-
-Solicita que firme con su billetera preferida.
-
-Esta firma prueba que es el dueño de esta billetera.
+Esta firma prueba que es su billetera.
 Se usará para generar una clave que cifra y descifra sus datos.
 
 URI: ${uri}
@@ -54,6 +47,80 @@ function base64UrlToBase64(base64Url: string): string {
  */
 function base64ToBase64Url(base64: string): string {
   return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
+/**
+ * Derive X25519 keypair from root key
+ * (publicX, privateX) = x25519DeriveKeypair(rootKeyX)
+ */
+export function x25519DeriveKeypair(rootKey: Uint8Array): {
+  publicKey: Uint8Array;
+  privateKey: Uint8Array;
+} {
+  // For now, use the root key directly as X25519 private key
+  // In a full implementation, we might use HKDF to derive: privateX = HKDF(rootKeyX, "x25519-device-key")
+  // But for simplicity and security, using the 32-byte root key directly works
+  const privateKey = rootKey;
+
+  // Derive the corresponding public key
+  const publicKey = x25519.getPublicKey(privateKey);
+
+  return { publicKey, privateKey };
+}
+
+/**
+ * Derive shared secret using X25519 ECDH
+ * Used for peer-to-peer encryption/decryption
+ */
+export async function x25519DeriveSharedSecret(
+  privateKey: Uint8Array,
+  publicKey: Uint8Array,
+): Promise<Uint8Array> {
+  // Perform ECDH key exchange
+  const sharedSecret = x25519.getSharedSecret(privateKey, publicKey);
+
+  // Use HKDF to derive final AES key from shared secret
+  // This provides better key derivation and domain separation
+  return deriveAESKeyFromSharedSecret(sharedSecret);
+}
+
+/**
+ * Derive AES key from X25519 shared secret using HKDF
+ */
+async function deriveAESKeyFromSharedSecret(
+  sharedSecret: Uint8Array,
+): Promise<Uint8Array> {
+  // Import shared secret as key material for HKDF
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    sharedSecret.buffer.slice(
+      sharedSecret.byteOffset,
+      sharedSecret.byteOffset + sharedSecret.byteLength,
+    ) as ArrayBuffer,
+    { name: "HKDF" },
+    false,
+    ["deriveBits"],
+  );
+
+  // Create salt (empty for shared secret derivation)
+  const salt = new Uint8Array(0);
+
+  // Create info for domain separation
+  const info = new TextEncoder().encode("x25519-shared-secret-aes-key");
+
+  // Derive 32-byte AES key using HKDF
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "HKDF",
+      hash: "SHA-256",
+      salt: salt,
+      info: info,
+    },
+    keyMaterial,
+    256, // 32 bytes
+  );
+
+  return new Uint8Array(derivedBits);
 }
 
 /**
@@ -237,6 +304,7 @@ export interface PasskeyCredential {
   created: number;
   wrappedKey?: string;
   iv?: string;
+  x25519PublicKey?: string;
 }
 
 export interface AuthenticationResult {
@@ -270,10 +338,20 @@ export async function registerPasskey(
     // Derive deterministic master key from wallet signature
     const masterKey = await deriveMasterKey(walletSignature, walletAddress);
 
+    // Derive X25519 public key from master key for peer messaging
+    const { publicKey: x25519PublicKey } = x25519DeriveKeypair(masterKey);
+
     // Store master key temporarily until first authentication
+    // Note: Only master key is stored temporarily - X25519 keys are re-derived when needed
     sessionStorage.setItem(
       `master-key-${walletAddress}`,
       JSON.stringify(Array.from(masterKey)),
+    );
+
+    // Store X25519 public key immediately (safe to store in plaintext)
+    sessionStorage.setItem(
+      `x25519-public-key-${walletAddress}`,
+      JSON.stringify(Array.from(x25519PublicKey)),
     );
 
     // Check if WebAuthn is supported
@@ -464,9 +542,16 @@ export async function authenticateWithPasskey(
       const tempMasterKeyData = sessionStorage.getItem(
         `master-key-${walletAddress}`,
       );
-      if (tempMasterKeyData) {
+      const tempX25519PublicKeyData = sessionStorage.getItem(
+        `x25519-public-key-${walletAddress}`,
+      );
+
+      if (tempMasterKeyData && tempX25519PublicKeyData) {
         try {
           const tempMasterKey = new Uint8Array(JSON.parse(tempMasterKeyData));
+          const tempX25519PublicKey = new Uint8Array(
+            JSON.parse(tempX25519PublicKeyData),
+          );
 
           // Wrap the master key with credential ID (deterministic)
           const { wrappedKey, iv } = await wrapMasterKey(
@@ -474,16 +559,19 @@ export async function authenticateWithPasskey(
             credentialId,
           );
 
-          // Update credential with wrapped key
+          // Update credential with wrapped key and X25519 public key
+          // Only X25519 public key is stored in localStorage - master key exists only wrapped
           const updatedCredential = {
             ...storedCredentials[0],
             wrappedKey,
             iv,
+            x25519PublicKey: btoa(String.fromCharCode(...tempX25519PublicKey)),
           };
           storeCredential(walletAddress!, updatedCredential);
 
           // Clean up temporary storage
           sessionStorage.removeItem(`master-key-${walletAddress}`);
+          sessionStorage.removeItem(`x25519-public-key-${walletAddress}`);
 
           masterKey = tempMasterKey;
         } catch (error) {

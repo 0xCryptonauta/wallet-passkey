@@ -11,7 +11,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ onTabClick }: NavbarProps) {
-  const { isAuthenticated, hasPasskeys, currentWalletAddress } = useAuth();
+  const { isAuthenticated, currentWalletAddress } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // ENS lookup for navbar display
