@@ -4,13 +4,14 @@ import { useAuth } from "../context/AuthContext";
 import { useEnsName } from "wagmi";
 import cache from "../lib/accountCache";
 
-type TabType = "auth" | "sign" | "verify" | "encrypt" | "decrypt";
+type TabType = "sign" | "verify" | "encrypt" | "decrypt";
 
 interface NavbarProps {
   onTabClick: (tab: TabType) => void;
+  onAuthClick: () => void;
 }
 
-export function Navbar({ onTabClick }: NavbarProps) {
+export function Navbar({ onTabClick, onAuthClick }: NavbarProps) {
   const { isAuthenticated, currentWalletAddress } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -99,12 +100,12 @@ export function Navbar({ onTabClick }: NavbarProps) {
             </button>
           </div>
 
-          {/* Show authenticated wallet or Auth tab with status */}
+          {/* Show authenticated wallet or Auth side panel trigger */}
           <div className="flex items-center gap-2">
             {isAuthenticated && currentWalletAddress ? (
               <div
                 className="flex items-center gap-2 px-2 sm:px-3 py-1 bg-slate-100 text-slate-700 rounded-md text-xs sm:text-sm font-medium cursor-pointer hover:bg-slate-200 transition"
-                onClick={() => onTabClick("auth")}
+                onClick={onAuthClick}
               >
                 <span className="w-2 h-2 bg-slate-600 rounded-full"></span>
                 <span>{displayName}</span>
@@ -112,7 +113,7 @@ export function Navbar({ onTabClick }: NavbarProps) {
             ) : (
               <div
                 className="hover:text-slate-900 cursor-pointer flex items-center gap-2 px-2 sm:px-3 py-1 text-slate-600 font-medium"
-                onClick={() => onTabClick("auth")}
+                onClick={onAuthClick}
               >
                 <span>Auth</span>
                 <span className="w-2 h-2 rounded-full bg-slate-300"></span>
