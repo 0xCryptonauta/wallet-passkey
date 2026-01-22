@@ -1,6 +1,6 @@
 # 🔐 Wallet Passkey - Enterprise Web3 Authentication
 
-A revolutionary Web3 wallet application featuring **hardware-backed passkey authentication** with **enterprise-grade cryptography**. Combines Web3 wallet ownership verification with biometric security for the ultimate in secure, user-friendly authentication.
+A revolutionary Web3 wallet application featuring **hardware-backed passkey authentication** with **enterprise-grade cryptography** and **X25519 peer-to-peer messaging**. Combines Web3 wallet ownership verification with biometric security for the ultimate in secure, user-friendly authentication and encrypted communication.
 
 ## 🌟 **Key Features**
 
@@ -9,190 +9,301 @@ A revolutionary Web3 wallet application featuring **hardware-backed passkey auth
 - 🔒 **End-to-End Encryption**: Deterministic AES-GCM encryption with passkey-derived keys
 - 🔄 **Cross-Device Compatibility**: Same encryption keys work across all devices
 - **Wallet-Specific Binding**: Passkeys are cryptographically tied to wallet addresses
-- 🛡️ **Enterprise Cryptography**: HKDF key derivation + AES-GCM encryption
+- 🛡️ **Enterprise Cryptography**: HKDF key derivation + AES-GCM encryption + X25519 ECDH
 - ⚡ **Zero-Knowledge Architecture**: Sensitive keys never stored in plaintext
 - 🎯 **Biometric UX**: Hardware authentication without passwords
+- 🔗 **Peer-to-Peer Messaging**: X25519-based secure communication between users
 - 🚀 **Production Ready**: Built with modern Web3 and crypto standards
 
-## 🔐 **Authentication Flow & Session Management**
+---
 
-### **Hybrid Authentication System**
+# 🔐 Wallet-Bound X25519 Messaging Model
 
-The application implements **intelligent device-aware authentication** that automatically selects the best method for each device:
+A secure, wallet-authenticated, device-bound messaging model using modern cryptography primitives.
 
-#### **Device Detection & Method Selection**
+---
 
-```typescript
-// Automatically detects device capabilities
-const capabilities = {
-  isWebAuthnSupported: isWebAuthnSupported(),
-  isPlatformAuthAvailable: await isPlatformAuthenticatorAvailable(),
-  isMobile: isMobileDevice(),
-};
+## ✨ Overview
 
-// Selects optimal auth method
-const method = getRecommendedAuthMethod();
-// Returns: 'webauthn' | 'wallet'
+This model enables two users to derive a shared symmetric encryption key without ever transmitting it, using:
+
+- Wallet signatures for identity proof
+- HKDF for deterministic key derivation
+- X25519 for key agreement
+- AES-GCM for message encryption
+- Passkeys (WebAuthn) for secure private key storage
+
+# UX Flow
+
+## 🧱 Setup (User X)
+
+### 1. Wallet Identity Proof
+
+User **X** signs a fixed challenge containing:
+
+- domain
+- purpose
+
+This signature proves wallet ownership.
+
+> ⚠️ The signature is **not** used directly as a private key.
+
+---
+
+### 2. Deterministic Root Key Derivation
+
+The wallet signature is fed into HKDF to derive a deterministic root key.
+
+```text
+rootKeyX = HKDF(
+  input = signatureX,
+  salt = app-domain,
+  info = userX + chainId
+)
 ```
 
-#### **Authentication Methods**
+### 3. X25519 Key Pair Derivation
 
-**🖥️ Desktop/Supported Devices:**
+- The root key is used to derive an X25519 private key.
 
-- **WebAuthn Passkeys**: Hardware-backed biometric authentication
-- **Requirements**: Platform authenticators available + not mobile
+      privateX = HKDF(rootKeyX, "x25519-device-key")
 
-**📱 Mobile/Limited Devices:**
+- The corresponding public key is derived using X25519.
 
-- **Wallet Signature Authentication**: Cryptographic wallet signing
-- **Requirements**: Connected wallet with signing capability
+      publicX = X25519(privateX)
 
-#### **Session Persistence**
+### 4. Secure Storage & Publication
 
-- ✅ **Passkey sessions remain active** when wallets are disconnected
-- ✅ **Navbar displays authenticated state** with wallet address
-- ✅ **Security maintained** with 24-hour automatic expiration
-- ✅ **Wallet switching** properly logs out sessions for different addresses
-- ✅ **Seamless reconnection** maintains authentication for the same wallet
+- PrivateX is stored encrypted behind a passkey (WebAuthn)
 
-**Example Flow:**
+- PublicX is shared publicly
 
-1. Connect wallet → System detects device capabilities
-2. **Desktop**: Offers WebAuthn passkey registration
-3. **Mobile**: Offers wallet signature authentication
-4. Authentication persists independently of wallet connection
-5. Automatic method switching based on device capabilities
+---
 
-### **How Wallet Signature → Passkey Encryption Works**
+### 5. UserZ → UserX
 
-This application implements a **5-phase cryptographic architecture** that combines Web3 wallet ownership with hardware-backed passkey security:
+- User Z has their own X25519 key pair:
 
-### **Phase 1: Wallet Bootstrap** 🔑
+      (privateZ, publicZ)
 
-```
-User clicks "Create Passkey" → Wallet signature prompt appears
-```
+1. Shared Secret Derivation
+   - User Z derives a shared secret using:
+     - their private key
 
-- User signs a comprehensive challenge message with their connected wallet
-- Challenge includes domain verification and security warnings
-- Proves wallet ownership before creating passkey credentials
+     - user X’s public key
 
-### **Phase 2: Master Key Derivation** 🛠️
+   ```
+   sharedZX = X25519(privateZ, publicX)
+   ```
 
-```
-walletSignature → HKDF(walletSignature, salt, info) → masterKey
-```
+2. Symmetric Key Derivation
+   - The shared secret is expanded into an AES key using HKDF.
 
-- Uses **HKDF (HMAC-based Key Derivation Function)** with SHA-256
-- Salt: App version (`"your-app-v1"`)
-- Info: User address + chain ID for deterministic derivation
-- Produces 32-byte cryptographically secure master key
+   ```
+   aesKeyZX = HKDF(sharedZX)
+   ```
 
-### **Phase 3: WebAuthn Passkey Creation** 🔐
+3. Message Encryption
+   - User Z encrypts the message using AES-GCM.
 
-```
-masterKey exists → Create WebAuthn credential
-```
+   ```
+   ciphertext = AES-GCM-ENCRYPT(aesKeyZX, message)
+   ```
 
-- Hardware-backed passkey using WebAuthn API
-- Supports Touch ID, Face ID, Windows Hello, and security keys
-- User verification required (biometric/PIN)
-- Creates phishing-resistant credential
+4. Message Transmission
+   - User Z sends the following to user X:
 
-### **Phase 4: Key Wrapping** 📦
+   ```
+   (publicZ, ciphertext)
+   ```
 
-```
-masterKey → AES-GCM(passkeySignature) → wrappedKey + IV
-```
+---
 
-- **AES-GCM (Galois/Counter Mode)** authenticated encryption
-- Wrapping key derived from passkey signature via HKDF
-- Generates cryptographically secure 12-byte IV
-- Stores wrapped master key securely
+### 6. UserX Receives
 
-### **Phase 5: Per-Operation Biometric Verification** 🎯
+1. Shared Secret Derivation
+   - User X derives the same shared secret using:
+     - their private key
+     - user Z’s public key
 
-```
-Each encrypt/decrypt → WebAuthn assertion → Unwrap masterKey → Use → Discard
-```
+   ```
+   sharedXZ = X25519(privateX, publicZ)
+   ```
 
-- **Enhanced Security**: Each cryptographic operation requires fresh biometric verification
-- User prompted for fingerprint/face/Touch ID on every encrypt/decrypt
-- Master key temporarily unwrapped only for the specific operation
-- Zero-knowledge: master key never stored in memory between operations
-- Automatic cleanup immediately after each operation completes
+2. Symmetric Key Derivation
+
+   ```
+   aesKeyXZ = HKDF(sharedXZ)
+   ```
+
+3. Message Decryption
+
+   ```
+   message = AES-GCM-DECRYPT(aesKeyXZ, ciphertext)
+   ```
+
+4. Result
+
+   ```
+   sharedZX == sharedXZ
+   aesKeyZX == aesKeyXZ
+   ```
+
+5. User X successfully decrypts the message.
+
+---
+
+---
+
+### **_🔒 Security Notes_**
+
+- X25519 is used only for key agreement, never for encryption
+- AES-GCM is used for authenticated encryption
+- HKDF is mandatory for key derivation
+- Private keys never leave the device
+- Public keys must be authenticated (wallet signature, Ed25519, TLS, etc.) to prevent MITM attacks
+
+---
+
+### **_🧠 Mental Model Summary_**
+
+- Wallet → Identity proof
+- HKDF → Deterministic root
+- X25519 → Shared secret
+- HKDF → Symmetric key
+- AES → Encrypted messages
+- Passkey→ Secure private key storage
+
+---
 
 ## 🔒 **Encryption & Decryption System**
 
-The application provides **end-to-end encryption** capabilities with **deterministic key derivation** for cross-device compatibility:
+The application provides **dual-mode encryption** capabilities: **self-encryption** (personal messages) and **peer-to-peer encryption** (secure messaging between users) using X25519 ECDH key agreement.
 
 ### **Encrypt Tab** 📝
 
+The Encrypt tab supports two encryption modes:
+
+#### **Mode 1: Encrypt for Myself** (Self-Encryption)
+
 - **Per-Operation Biometric Verification**: Each encryption requires fresh fingerprint/face/Touch ID
-- **Deterministic Encryption**: Uses passkey-derived master key for AES-GCM encryption
-- **Unique IV Generation**: Each message encrypted with cryptographically secure random IV
-- **Base64 Output**: Encrypted data encoded for easy storage and transmission
-- **Authentication Required**: Must be authenticated with passkey to access encryption
+- **Deterministic Encryption**: Uses passkey-derived master key directly for AES-GCM encryption
+- **Cross-Device Compatibility**: Same messages decrypt correctly on any authenticated device
+- **Use Case**: Personal encrypted notes, secure storage
+
+#### **Mode 2: Encrypt for Someone Else** (Peer-to-Peer)
+
+- **X25519 ECDH**: Uses Elliptic Curve Diffie-Hellman for shared secret derivation
+- **Recipient Public Key**: Input the recipient's X25519 public key (shared via Auth tab)
+- **Shared Secret**: `ECDH(myPrivateKey, recipientPublicKey) → HKDF → AES Key`
+- **Use Case**: Secure messaging between different users
 
 ### **Decrypt Tab** 🔓
 
+The Decrypt tab supports corresponding decryption modes:
+
+#### **Mode 1: Decrypt for Myself** (Self-Decryption)
+
 - **Per-Operation Biometric Verification**: Each decryption requires fresh fingerprint/face/Touch ID
-- **Seamless Decryption**: Automatically extracts IV and decrypts using temporarily unwrapped key
-- **Cross-Device Compatibility**: Same encrypted messages decrypt correctly on any device
-- **Error Handling**: Clear feedback for invalid messages or authentication issues
+- **Seamless Decryption**: Automatically extracts IV and decrypts using temporarily unwrapped master key
 - **Zero-Knowledge Keys**: Master keys never stored in memory between operations
 
-### **Cryptographic Flow**
+#### **Mode 2: Decrypt from Someone Else** (Peer-to-Peer)
+
+- **X25519 ECDH**: Uses sender's public key for shared secret derivation
+- **Sender Public Key**: Input the sender's X25519 public key to decrypt
+- **Shared Secret**: `ECDH(myPrivateKey, senderPublicKey) → HKDF → AES Key`
+- **Perfect Security**: Messages can only be decrypted by intended recipients
+
+### **Cryptographic Flows**
+
+#### **Self-Encryption Flow**
 
 ```
 Message → AES-GCM(masterKey, randomIV) → IV + encryptedData → base64
-
 base64 → extract IV + encryptedData → AES-GCM(masterKey, IV) → Message
+```
+
+#### **Peer-to-Peer Encryption Flow**
+
+```
+Sender: masterKey → X25519(privateKey) → ECDH(privateKey, recipientPub) → HKDF → AES Key → Encrypt
+Recipient: masterKey → X25519(privateKey) → ECDH(privateKey, senderPub) → HKDF → AES Key → Decrypt
 ```
 
 ### **Key Features**
 
-- ✅ **Deterministic Keys**: Same wallet address = same encryption key across devices
+- ✅ **Dual Mode Encryption**: Self-encryption + peer-to-peer messaging
+- ✅ **X25519 ECDH**: Elliptic Curve Diffie-Hellman for key agreement
+- ✅ **HKDF Key Derivation**: Domain separation for shared secrets
 - ✅ **AES-GCM Mode**: Authenticated encryption with integrity verification
 - ✅ **Secure IV**: 12-byte cryptographically secure random initialization vectors
 - ✅ **Base64 Encoding**: Safe for text storage and transmission
-- ✅ **Per-Operation Biometric Verification**: Each encrypt/decrypt requires fresh fingerprint/face/Touch ID
+- ✅ **Per-Operation Biometric Verification**: Each encrypt/decrypt requires fresh authentication
 - ✅ **Zero Storage**: Sensitive keys never stored in memory between operations
 
-### **Usage Example**
+### **Usage Examples**
+
+#### **Self-Encryption Example**
 
 1. **Connect Wallet** → Authenticate with passkey
-2. **Switch to Encrypt Tab** → Enter message → Click "Encrypt Message"
-3. **Copy Base64 Output** → Can be shared or stored securely
-4. **Switch to Decrypt Tab** → Paste encrypted message → Click "Decrypt Message"
-5. **View Original Message** → Successfully decrypted with same key
+2. **Encrypt Tab** → Select "Encrypt for Myself" → Enter message → Encrypt
+3. **Decrypt Tab** → Select "Decrypt for Myself" → Paste encrypted message → Decrypt
+
+#### **Peer-to-Peer Example**
+
+1. **User A**: Auth tab → Copy X25519 public key → Share with User B
+2. **User B**: Auth tab → Copy X25519 public key → Share with User A
+3. **User A**: Encrypt tab → "Encrypt for Someone Else" → Input User B's public key → Encrypt message
+4. **User B**: Decrypt tab → "Decrypt from Someone Else" → Input User A's public key → Decrypt message
+
+## 🔑 **Public Key Management**
+
+### **X25519 Public Key Display**
+
+- **Location**: Auth tab, under wallet address and above creation date
+- **Format**: Base64-encoded 32-byte X25519 public key
+- **Copy Functionality**: One-click copying to clipboard with success feedback
+- **Security**: Public keys are safe to share (no private information revealed)
+
+### **Key Storage Architecture**
+
+- **localStorage**: Only X25519 public keys (plaintext, shareable)
+- **Passkey-protected**: Master key exists only wrapped behind WebAuthn
+- **Runtime**: Private keys derived on-demand, never persisted
+- **Zero-knowledge**: Sensitive keys never stored between operations
 
 ## 🏗️ **Architecture Benefits**
 
 ### **Security Properties**
 
-- **🔐 End-to-End Encryption**: Master keys encrypted with AES-GCM
+- **🔐 Dual-Mode Encryption**: Self-encryption + X25519 peer-to-peer messaging
 - **🔑 Deterministic Derivation**: Same wallet → same keys (recoverable)
 - **🔗 Wallet Isolation**: Passkeys automatically invalidated when switching wallets
-- **🛡️ Hardware Security**: TPM/TEE-backed key operations
+- **🛡️ Hardware Security**: TPM/TEE-backed key operations with WebAuthn
 - **🚫 Anti-Phishing**: Domain verification in challenges
-- **⚡ Zero Trust**: No sensitive data in browser storage
+- **⚡ Zero-Knowledge Storage**: Master keys exist only wrapped, X25519 public keys only in localStorage
+- **🔒 Perfect Forward Secrecy**: Each peer-to-peer message uses unique shared secret
+- **🕵️ Zero-Trust**: No sensitive data in browser storage between operations
 
 ### **User Experience**
 
-- **👆 One-Touch Authentication**: Biometric hardware UX
+- **👆 One-Touch Authentication**: Biometric hardware UX for every operation
 - **🔄 Wallet Integration**: Seamlessly connects to existing wallets
-- **📱 Cross-Device**: iCloud/Google sync for passkeys
+- **📱 Cross-Device**: iCloud/Google sync for passkeys and public keys
 - **🚀 Fast Operations**: Hardware-accelerated cryptography
 - **🔒 Passwordless**: No passwords to remember or type
+- **🔗 Peer Messaging**: Share public keys for secure person-to-person communication
+- **📋 Copy-Paste UX**: Easy public key sharing with copy-to-clipboard functionality
 
 ### **Technical Advantages**
 
-- **🏢 Enterprise Grade**: FIPS-compliant algorithms
-- **🌐 Web Standards**: WebAuthn + Web Crypto API
+- **🏢 Enterprise Grade**: FIPS-compliant algorithms (HKDF, AES-GCM, X25519)
+- **🌐 Web Standards**: WebAuthn + Web Crypto API + modern cryptography
 - **📊 Auditable**: Complete cryptographic operation trail
-- **🔧 Extensible**: Exported functions for additional features
+- **🔧 Extensible**: Exported functions for additional messaging features
 - **⚡ Performant**: Browser-native cryptographic acceleration
+- **🔄 Future-Proof**: Architecture supports additional encryption schemes
 
 ## 🛠 Tech Stack
 
@@ -226,29 +337,6 @@ bun run build
 
 ## 🔌 Configuration
 
-### Wagmi Setup (`src/wagmi.ts`)
-
-```typescript
-import { http, createConfig } from "wagmi";
-import { arbitrum, mainnet } from "wagmi/chains";
-import { injected, walletConnect } from "wagmi/connectors";
-
-export const config = createConfig({
-  chains: [arbitrum, mainnet],
-  connectors: [
-    injected(), // MetaMask, Rabby, etc.
-    walletConnect({
-      projectId: "2f05a7db73ba2b8b6a26c28c1e1a1b1b", // Test project ID (replace with your own for production)
-      showQrModal: true,
-    }),
-  ],
-  transports: {
-    [arbitrum.id]: http(),
-    [mainnet.id]: http(),
-  },
-});
-```
-
 ### WalletConnect Setup
 
 #### **Environment Variables** 🔧
@@ -258,97 +346,6 @@ Create a `.env` file in your project root:
 ```bash
 # .env
 VITE_WALLETCONNECT_PROJECT_ID=2f05a7db73ba2b8b6a26c28c1e1a1b1b
-```
-
-**Note:** `.env` files are automatically ignored by git for security.
-
-#### **For Development/Testing** 🧪
-
-You can test the WalletConnect UI and functionality with the included test project ID in `.env`:
-
-```typescript
-walletConnect({
-  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "demo-project-id",
-  showQrModal: true,
-}),
-```
-
-**What Works in Test Mode:**
-
-- ✅ WalletConnect button appears in wallet selection
-- ✅ QR modal displays when clicked
-- ✅ UI components render correctly
-- ✅ No build errors or runtime crashes
-
-**What Doesn't Work in Test Mode:**
-
-- ❌ Actual wallet connections (requires valid project ID)
-- ❌ QR code scanning by mobile wallets
-- ❌ Real transaction signing
-
-#### **For Production** 🚀
-
-1. **Create a WalletConnect Project**:
-   - Go to [WalletConnect Cloud](https://cloud.walletconnect.com/)
-   - Sign up/Sign in to your account
-   - Create a new project
-   - Copy your Project ID
-
-2. **Update Configuration**:
-   - Replace the test project ID in `src/wagmi.ts` with your actual Project ID
-   - The QR modal will enable real wallet connections
-
-3. **Supported Wallets**:
-   - MetaMask Mobile
-   - Trust Wallet
-   - Rainbow
-   - Coinbase Wallet
-   - Argent
-   - And 400+ more...
-
-### Tailwind v4 Setup (`vite.config.ts`)
-
-```typescript
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
-
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-});
-```
-
-## 🚀 Deployment
-
-### GitHub Pages Setup
-
-The application is configured for automatic deployment to GitHub Pages with the subdomain `wallet.inbytes.xyz`.
-
-#### Prerequisites
-
-1. **Enable GitHub Pages** in your repository settings:
-   - Go to Settings → Pages
-   - Set source to "GitHub Actions"
-   - Set custom domain to `wallet.inbytes.xyz`
-
-2. **Configure DNS** for the subdomain:
-   - Add a CNAME record for `wallet.inbytes.xyz` pointing to `0xCryptonauta.github.io`
-   - This enables the custom subdomain deployment
-
-#### Automatic Deployment
-
-- **Trigger**: Pushes to the `main` branch
-- **Build**: Uses Node.js 18 with npm caching
-- **Deploy**: Automatically deploys to GitHub Pages with the CNAME file
-
-#### Manual Build & Preview
-
-```bash
-# Build for production
-npm run build
-
-# Preview production build locally
-npm run preview
 ```
 
 ### PWA Features
@@ -364,11 +361,18 @@ The app includes Progressive Web App (PWA) capabilities:
 
 The application provides multiple tabs for different functionalities:
 
-- **🔐 Auth Tab**: Passkey registration and authentication
+- **🔐 Auth Tab**: Passkey registration, authentication, and X25519 public key management
+  - Register and authenticate with WebAuthn passkeys
+  - View and copy X25519 public key for peer-to-peer messaging
+  - Hardware-backed biometric verification for all operations
 - **✍️ Sign Tab**: Message signing with connected wallet
 - **✅ Verify Tab**: Signature verification
-- **🔒 Encrypt Tab**: End-to-end encryption using passkey-derived keys
-- **🔓 Decrypt Tab**: Decryption of encrypted messages
+- **🔒 Encrypt Tab**: Dual-mode encryption (self + peer-to-peer)
+  - **Encrypt for Myself**: Personal secure storage
+  - **Encrypt for Someone Else**: X25519-based secure messaging to other users
+- **🔓 Decrypt Tab**: Dual-mode decryption (self + peer-to-peer)
+  - **Decrypt for Myself**: Access personal encrypted content
+  - **Decrypt from Someone Else**: X25519-based decryption of peer messages
 
 ## 📝 Common Commands
 
