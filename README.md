@@ -357,14 +357,12 @@ The app includes Progressive Web App (PWA) capabilities:
 - **Auto-Updates**: Service worker automatically updates the app
 - **Fast Loading**: Cached resources load instantly
 
-## 📱 **Application Tabs**
+## 📱 **Application Interface**
 
-The application provides multiple tabs for different functionalities:
+The application provides multiple tabs for different functionalities with a modern side panel for authentication:
 
-- **🔐 Auth Tab**: Passkey registration, authentication, and X25519 public key management
-  - Register and authenticate with WebAuthn passkeys
-  - View and copy X25519 public key for peer-to-peer messaging
-  - Hardware-backed biometric verification for all operations
+### **Navigation Tabs**
+
 - **✍️ Sign Tab**: Message signing with connected wallet
 - **✅ Verify Tab**: Signature verification
 - **🔒 Encrypt Tab**: Dual-mode encryption (self + peer-to-peer)
@@ -374,6 +372,17 @@ The application provides multiple tabs for different functionalities:
   - **Decrypt for Myself**: Access personal encrypted content
   - **Decrypt from Someone Else**: X25519-based decryption of peer messages
 
+### **Authentication Side Panel** 🔐
+
+- **Access**: Click the "Auth" button in the navbar or authenticated wallet display
+- **Features**: Passkey registration, authentication, and X25519 public key management
+- **Functionality**:
+  - Register and authenticate with WebAuthn passkeys
+  - View and copy X25519 public key for peer-to-peer messaging
+  - Hardware-backed biometric verification for all operations
+- **UX**: Slides in from the right, click outside or press ESC to close
+- **Mobile**: Fully responsive side panel experience
+
 ## 📝 Common Commands
 
 | Command         | Action                                            |
@@ -382,6 +391,17 @@ The application provides multiple tabs for different functionalities:
 | `bun run build` | Compiles optimized production build               |
 | `bun add <pkg>` | Adds a dependency using Bun's high-speed resolver |
 | `bun test`      | Runs the internal Bun test runner                 |
+
+## 🔧 Development Configuration
+
+This project uses the following git configuration for better commit history visualization:
+
+```bash
+# Always create merge commits to preserve branch history in git graph
+git config --global merge.ff false
+```
+
+This ensures that `git merge` always creates a merge commit, preserving the branch structure in the git history graph.
 
 ---
 
