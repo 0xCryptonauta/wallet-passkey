@@ -249,6 +249,7 @@ When performing any code change, you MUST follow this workflow:
 🚫 NEVER:
 
 - Commit directly to `dev`
+- Push dev to origin
 - Touch or checkout `main`
 - Merge anything into `main`
 
