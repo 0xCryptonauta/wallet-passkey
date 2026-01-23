@@ -381,7 +381,8 @@ The application provides multiple tabs for different functionalities with a mode
   - View and copy X25519 public key for peer-to-peer messaging
   - Hardware-backed biometric verification for all operations
 - **UX**: Slides in from the right, click outside or press ESC to close
-- **Mobile**: Fully responsive side panel experience
+- **Mobile**: Close button (X) in top-right + back gesture support
+- **Desktop**: No close button, click-outside or ESC key only
 
 ## 📝 Common Commands
 

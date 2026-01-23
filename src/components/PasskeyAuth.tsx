@@ -107,7 +107,7 @@ export function PasskeyAuth() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4">
+    <div className="max-w-2xl mx-auto py-2 px-4">
       <div className="bg-white p-8 rounded-lg border border-slate-200">
         {/* Wallet Section */}
         <div className="mb-8">
