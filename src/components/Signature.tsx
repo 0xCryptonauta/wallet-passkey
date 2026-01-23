@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useSignMessage } from "wagmi";
+import { useAuth } from "../context/AuthContext";
 
 export function Signature() {
+  const { isAuthenticated } = useAuth();
   const [message, setMessage] = useState("");
   const [signature, setSignature] = useState<string | null>(null);
   const { signMessage, isPending } = useSignMessage();
@@ -25,6 +27,44 @@ export function Signature() {
       },
     );
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-2xl mx-auto py-12 px-4">
+        <div className="bg-white p-8 rounded-lg border border-slate-200">
+          <div className="text-center">
+            <div className="mb-4">
+              <svg
+                className="mx-auto h-12 w-12 text-slate-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold mb-4 text-slate-900">
+              Authentication Required
+            </h2>
+            <p className="text-slate-600 mb-6">
+              You must authenticate with your passkey to access message signing
+              functionality.
+            </p>
+            <p className="text-sm text-slate-500">
+              Go to the <strong>Auth</strong> tab to register or authenticate
+              with your passkey.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4">
