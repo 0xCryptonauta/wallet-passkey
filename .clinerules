@@ -228,3 +228,28 @@ When in doubt:
 - Choose the simplest UI
 - Choose the fewest components
 - Choose clarity over flexibility
+
+# ============================
+
+# Git Workflow Rule — Feature Branch Flow
+
+# ============================
+
+When performing any code change, you MUST follow this workflow:
+
+1. Stash any uncommitted changes if present
+2. Create a new feature branch from `dev`
+   - Branch name format: `feature/<short-description>`
+3. Commit all changes to the feature branch
+   - Use Conventional Commits
+4. Checkout `dev`
+5. Merge the feature branch into `dev`
+6. Stop after merge
+
+🚫 NEVER:
+
+- Commit directly to `dev`
+- Touch or checkout `main`
+- Merge anything into `main`
+
+If a step fails, STOP and report the error before continuing.
